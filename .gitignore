@@ -1,3 +1,6 @@
+cached
+display*
+
 __pycache__
 */__pycache__
 blenderproc.egg-info/

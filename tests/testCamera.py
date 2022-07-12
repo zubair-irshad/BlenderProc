@@ -1,4 +1,4 @@
-import blenderproc as bproc
+import blenderproc_arcive_arcive as bproc
 import unittest
 import os.path
 import numpy as np
