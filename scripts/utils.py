@@ -16,13 +16,17 @@ import sys
 sys.path.append('/data2/jhuangce/BlenderProc/scripts')
 from camera import *
 import json
+from typing import List
+from bbox_proj import *
 
 LAYOUT_DIR = '/data2/jhuangce/3D-FRONT'
 TEXTURE_DIR = '/data2/jhuangce/3D-FRONT-texture'
 MODEL_DIR = '/data2/jhuangce/3D-FUTURE-model'
+RENDER_TEMP_DIR = '/data2/jhuangce/BlenderProc/FRONT3D_render'
 SCENE_LIST = []
 
 def construct_scene_list():
+    """ Construct a list of scenes and save to SCENE_LIST global variable. """
     layout_list = [join(LAYOUT_DIR, name) for name in os.listdir(LAYOUT_DIR)]
     layout_list.sort()
     for scene_code in layout_list:
@@ -35,19 +39,17 @@ def check_cache_dir(scene_idx):
 
 
 def add_texture(obj:MeshObject, tex_path):
+    """ Add a texture to an object. 
+        Args:
+            obj: MeshObject
+            tex_path: path to the texture
+    """
     obj.clear_materials()
     mat = obj.new_material('my_material')
     bsdf = mat.nodes["Principled BSDF"]
     texImage = mat.nodes.new('ShaderNodeTexImage')
     texImage.image = bpy.data.images.load(tex_path)
     mat.links.new(bsdf.inputs['Base Color'], texImage.outputs['Color'])
-
-    # mat = obj.blender_obj.data.materials[0]
-    # bsdf = mat.node_tree.nodes["Principled BSDF"]
-    # texImage = mat.node_tree.nodes.new('ShaderNodeTexImage')
-    # texImage.image = bpy.data.images.load(tex_path)
-    # mat.node_tree.links.new(bsdf.inputs['Base Color'], texImage.outputs['Color'])
-    
 
 
 def load_scene_objects(scene_idx, overwrite=False):
@@ -63,6 +65,7 @@ def load_scene_objects(scene_idx, overwrite=False):
         lamp_light_strength=30
     )
 
+    # add texture to wall and floor. Otherwise they will be white.
     for obj in loaded_objects:
         name = obj.get_name()
         if 'wall' in name.lower():
@@ -74,13 +77,14 @@ def load_scene_objects(scene_idx, overwrite=False):
 
     return loaded_objects
 
-def get_locs_and_rots(scene_idx, room_idx = None):
-    """ Generate the camera locations and rotations in a room. """
+def get_cameras_in_oval_trajectory(scene_idx, room_idx = None):
+    """ Generate the camera locations and rotations in a room according to oval trajectory. """
     locations, rotations = [], []
     config_dict = ROOM_CONFIG[scene_idx]
     for key, value in config_dict.items():
         if room_idx!=None and key!=room_idx:
             continue
+        # the trajectory is an ellipse
         center = value['center'] # (3, 2.2)
         a = value['a'] # 1.5
         b = value['b'] # 2.2
@@ -222,7 +226,7 @@ class FloorPlan():
         self.save('floor_plan.jpg')
     
     def drawgroups_and_save(self):
-        locs, rots = get_locs_and_rots(self.scene_idx)
+        locs, rots = get_cameras_in_oval_trajectory(self.scene_idx)
         self.draw_objects()
         self.draw_coords()
         self.draw_samples(locs, rots) # customizable
@@ -230,16 +234,16 @@ class FloorPlan():
         self.save('floor_plan2.jpg')
 
 def image_to_video(img_dir, video_dir):
+    """ Args: 
+            img_dir: directory of images
+            video_dir: directory of output video to be saved in
+    """
     img_list = os.listdir(img_dir)
     img_list.sort()
     rgb_maps = [cv2.imread(os.path.join(img_dir, img_name)) for img_name in img_list]
     print(len(rgb_maps))
 
     imageio.mimwrite(os.path.join(video_dir, 'video.mp4'), np.stack(rgb_maps), fps=30, quality=8)
-
-def draw_map(scene_idx):
-    floor_plan = FloorPlan(scene_idx)
-    floor_plan.drawsamples_and_save()
 
 def render_sample(scene_idx, device):
     """ Each camera position render 4 images. """
@@ -301,7 +305,7 @@ def render_room(scene_idx, room_idx, device):
     scene_max[:2] = room_config['bbox'][1]
 
     poses = []
-    locs, rots = get_locs_and_rots(scene_idx, room_idx)
+    locs, rots = get_cameras_in_oval_trajectory(scene_idx, room_idx)
     for loc, rot in zip(locs, rots):
         cam2world_matrix = bproc.math.build_transformation_mat(loc, rot)
         bproc.camera.add_camera_pose(cam2world_matrix)
@@ -357,21 +361,163 @@ def render_room(scene_idx, room_idx, device):
     with open(os.path.join(outdir, 'transforms_test.json'), 'w') as f:
         f.write(json.dumps({"frames": test_frames}, indent=4))
 
+def normalize(x, axis=-1, order=2):
+    l2 = np.linalg.norm(x, order, axis)
+    l2 = np.expand_dims(l2, axis)
+    l2[l2 == 0] = 1
+    return x / l2,
 
+def look_at_rotation(camera_position, at=None, up=None, inverse=False, cv=False):
+    """
+    This function takes a vector 'camera_position' which specifies the location
+    of the camera in world coordinates and two vectors `at` and `up` which
+    indicate the position of the object and the up directions of the world
+    coordinate system respectively. The object is assumed to be centered at
+    the origin.
+    The output is a rotation matrix representing the transformation
+    from world coordinates -> view coordinates.
+    Input:
+        camera_position: 3
+        at: 1 x 3 or N x 3  (0, 0, 0) in default
+        up: 1 x 3 or N x 3  (0, 1, 0) in default
+    """
+
+    if at is None:
+        at = np.zeros_like(camera_position)
+    else:
+        at = np.array(at)
+    if up is None:
+        up = np.zeros_like(camera_position)
+        up[2] = -1
+    else:
+        up = np.array(up)
+
+    z_axis = normalize(camera_position - at)[0]
+    x_axis = normalize(np.cross(up, z_axis))[0]
+    y_axis = normalize(np.cross(z_axis, x_axis))[0]
+
+    R = np.concatenate([x_axis[:, None], y_axis[:, None], z_axis[:, None]], axis=1)
+    return R
+
+def c2w_from_locs_and_at(locs, at, up=(0, 0, 1)):
+    """ Convert camera locations and directions to camera2world matrix. """
+    c2ws = []
+    for cam_pos in locs:
+        c2w = np.eye(4)
+        cam_rot = look_at_rotation(cam_pos, at=at, up=up, inverse=False, cv=True)
+        c2w[:3, 3], c2w[:3, :3] = cam_pos, cam_rot
+        c2ws.append(c2w)
+    return c2ws
+
+def generate_four_corner_poses(scene_idx, room_idx):
+    """ Return a list of matrices of 4 corner views in the room. """
+    corners = ROOM_CONFIG[scene_idx][room_idx]['corners']
+    x1, y1, x2, y2 = corners[0][0], corners[0][1], corners[1][0], corners[1][1]
+    at = [(x1+x2)/2, (y1+y2)/2, 1.2]
+    locs = [[x1, y1, 2], [x1, y2, 2], [x2, y1, 2], [x2, y2, 2]]
+
+    c2ws = c2w_from_locs_and_at(locs, at)
+    
+    return c2ws
+
+def get_scene_bbox(loaded_objects):
+    """ Return the bounding box of the scene. """
+    bbox_mins = []
+    bbox_maxs = []
+    for i in range(len(loaded_objects)):
+        object = loaded_objects[i]
+        bbox = object.get_bound_box()
+        bbox_min = np.min(bbox, axis=0)
+        bbox_max = np.max(bbox, axis=0)
+        bbox_mins.append(bbox_min)
+        bbox_maxs.append(bbox_max)
+    scene_min = np.min(bbox_mins, axis=0)
+    scene_max = np.max(bbox_maxs, axis=0)
+    return scene_min, scene_max
+
+def get_room_bbox(scene_idx, room_idx, loaded_objects):
+    """ Return the bounding box of the room. """
+    scene_min, scene_max = get_scene_bbox(loaded_objects)
+    room_config = ROOM_CONFIG[scene_idx][room_idx]
+    scene_min[:2] = room_config['bbox'][0]
+    scene_max[:2] = room_config['bbox'][1]
+
+    return scene_min, scene_max
+
+
+
+def render_room_with_poses(scene_idx, poses, device='cuda:0', return_objects=False) -> List:
+    """ Render a scene with a list of poses. 
+        No room idx is needed because the poses can be anywhere in the room. """
+
+    bproc.init(compute_device=device, compute_device_type='CUDA')
+    # load objects of the scene to blenderproc
+    loaded_objects = load_scene_objects(scene_idx)
+
+    # add camera poses to render queue
+    for cam2world_matrix in poses:
+        bproc.camera.add_camera_pose(cam2world_matrix)
+    
+    # render
+    bproc.renderer.set_light_bounces(diffuse_bounces=200, glossy_bounces=200, max_bounces=200, transmission_bounces=200, transparent_max_bounces=200)
+    bproc.camera.set_intrinsics_from_K_matrix(K, IMG_WIDTH, IMG_HEIGHT)
+    # data = bproc.renderer.render(output_dir=RENDER_TEMP_DIR)
+    imgs = []
+    # for i in range(len(data['colors'])):
+    #     im_rgb = cv2.cvtColor(data['colors'][i], cv2.COLOR_BGR2RGB)
+    #     imgs.append(im_rgb)
+
+    if return_objects:
+        return imgs, loaded_objects
+    else:
+        return imgs
+
+def get_objects_in_room(scene_idx, room_idx, loaded_objects):
+    """ Return the objects within the room bbox. """
+    objects = []
+    
+    pass
+
+    return objects
 
 
 if __name__ == '__main__':
-
     construct_scene_list()
+    scene_idx = 3
+    room_idx = 0
+    render = True
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-    scene_idx = 5
-    room_idx = 2
-    render = False
+    poses = generate_four_corner_poses(scene_idx, room_idx)
+    imgs, loaded_objects = render_room_with_poses(scene_idx, poses, return_objects=True)
+    for i in range(len(imgs)):
+        cv2.imwrite(os.path.join(RENDER_TEMP_DIR, '{}.png'.format(i)), imgs[i])
 
-    if render:
-        render_room(scene_idx=scene_idx, room_idx=room_idx, device='cuda:0')
-    else:
-        floor_plan = FloorPlan(scene_idx)
-        floor_plan.drawsamples_and_save()
+    # debug
+    imgs = []
+    for i in range(4):
+        imgs.append(cv2.imread(os.path.join(RENDER_TEMP_DIR, '{}_544.png'.format(i))))
+
+    aabb_codes, labels = [], []
+    for object in loaded_objects:
+        bbox = object.get_bound_box()
+        aabb_codes.append(np.concatenate([np.min(bbox, axis=0), np.max(bbox, axis=0)], axis=0))
+        labels.append(object.get_name())
+    
+    imgs_projected = []
+    for img, pose in zip(imgs, poses):
+        imgs_projected.append(project_bbox_to_image(img, K, np.linalg.inv(pose), aabb_codes, labels))
+    
+    for i, img in enumerate(imgs_projected):
+        cv2.imwrite(os.path.join(RENDER_TEMP_DIR, '{}_projected.png'.format(i)), img)
+    
+    
+        
+
+    # if render:
+    #     render_room(scene_idx=scene_idx, room_idx=room_idx, device='cuda:0')
+    # else:
+    #     floor_plan = FloorPlan(scene_idx)
+    #     floor_plan.drawsamples_and_save()
 
     print("Success.")
