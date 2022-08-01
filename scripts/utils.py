@@ -1,6 +1,7 @@
 # python cli.py run ./scripts/utils.py 
 
 import blenderproc as bproc
+from random import shuffle
 import shutil
 from blenderproc.python.types.MeshObjectUtility import MeshObject
 import bpy
@@ -17,13 +18,19 @@ sys.path.append('/data2/jhuangce/BlenderProc/scripts')
 from camera import *
 import json
 from typing import List
-from bbox_proj import *
+from bbox_proj import project_bbox_to_image
 
+
+
+pi = np.pi
+cos = np.cos
+sin = np.sin
 LAYOUT_DIR = '/data2/jhuangce/3D-FRONT'
 TEXTURE_DIR = '/data2/jhuangce/3D-FRONT-texture'
 MODEL_DIR = '/data2/jhuangce/3D-FUTURE-model'
 RENDER_TEMP_DIR = '/data2/jhuangce/BlenderProc/FRONT3D_render'
 SCENE_LIST = []
+OBJ_BAN_LIST = ['Baseboard', 'Pocket', 'Floor', 'SlabSide.', 'WallInner', 'Front', 'WallTop', 'WallBottom', 'Ceiling.', 'Nightstand.001', 'Nightstand.003', 'Ceiling Lamp']
 
 def construct_scene_list():
     """ Construct a list of scenes and save to SCENE_LIST global variable. """
@@ -409,6 +416,19 @@ def c2w_from_locs_and_at(locs, at, up=(0, 0, 1)):
         c2ws.append(c2w)
     return c2ws
 
+def pos_in_bbox(pos, bbox):
+    """
+    Check if a point is inside a bounding box.
+    Input:
+        pos: 3 x 1
+        bbox: 6 x 1
+    Output:
+        True or False
+    """
+    return np.all(pos >= bbox[0]) and np.all(pos <= bbox[1])
+
+############################## poses generation ##################################
+
 def generate_four_corner_poses(scene_idx, room_idx):
     """ Return a list of matrices of 4 corner views in the room. """
     corners = ROOM_CONFIG[scene_idx][room_idx]['corners']
@@ -419,6 +439,69 @@ def generate_four_corner_poses(scene_idx, room_idx):
     c2ws = c2w_from_locs_and_at(locs, at)
     
     return c2ws
+
+def check_pos_valid(pos, room_objects, room_bbox):
+    """ Check if the position is in the room, not too close to walls and not conflicting with other objects. """
+    if not pos_in_bbox(pos, room_bbox):
+        return False
+    for obj in room_objects:
+        obj_bbox_8 = obj.get_bound_box()
+        obj_bbox = [np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)]
+        if pos_in_bbox(pos, obj_bbox):
+            return False
+
+    return True
+
+def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, global_poses=True, closeup_poses=True, num_poses_per_object=8):
+    pass
+    """ Return a list of poses including global poses and close-up poses for each object."""
+
+    poses = []
+    num_poses_per_object = 8
+
+    # TODO: implement global poses
+    if global_poses:
+        pass
+
+    # close-up poses for each object.
+    if closeup_poses:
+        for obj in room_objects:
+            obj_bbox_8 = obj.get_bound_box()
+            obj_bbox = [np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)]
+            cent = np.mean(obj_bbox_8, axis=0)
+            rad = np.linalg.norm(obj_bbox[1]-obj_bbox[0])/2 * 1.5
+
+            positions = []
+            n_hori_sects = 30
+            n_vert_sects = 10
+            theta_bound = [0, 2*pi]
+            phi_bound = [-pi/4, pi/4]
+            theta_sect = (theta_bound[1] - theta_bound[0]) / n_hori_sects
+            phi_sect = (phi_bound[1] - phi_bound[0]) / n_vert_sects
+            for i_vert_sect in range(n_vert_sects):
+                for i_hori_sect in range(n_hori_sects):
+                    theta_a = theta_bound[0] + i_hori_sect * theta_sect
+                    theta_b = theta_a + theta_sect
+                    phi_a = phi_bound[0] + i_vert_sect * phi_sect
+                    phi_b = phi_a + phi_sect
+                    theta = np.random.uniform(theta_a, theta_b)
+                    phi = np.random.uniform(phi_a, phi_b)
+                    pos = [cos(phi)*cos(theta), cos(phi)*sin(theta), sin(phi)]
+                    positions.append(pos)
+            positions = np.array(positions)
+            positions = positions * rad + cent
+
+            positions = [pos for pos in positions if check_pos_valid(pos, room_objects, room_bbox)]
+            shuffle(positions)
+            if len(positions) > num_poses_per_object:
+                positions = positions[:num_poses_per_object]
+
+            poses.extend(c2w_from_locs_and_at(positions, cent))
+
+    return poses
+
+
+#################################################################################
 
 def get_scene_bbox(loaded_objects):
     """ Return the bounding box of the scene. """
@@ -442,17 +525,38 @@ def get_room_bbox(scene_idx, room_idx, loaded_objects):
     scene_min[:2] = room_config['bbox'][0]
     scene_max[:2] = room_config['bbox'][1]
 
-    return scene_min, scene_max
+    return [scene_min, scene_max]
+
+def bbox_contained(bbox_a, bbox_b):
+    """ Return whether the bbox_a is contained in bbox_b. """
+    return bbox_a[0][0]>=bbox_b[0][0] and bbox_a[0][1]>=bbox_b[0][1] and bbox_a[0][2]>=bbox_b[0][2] and \
+           bbox_a[1][0]<=bbox_b[1][0] and bbox_a[1][1]<=bbox_b[1][1] and bbox_a[1][2]<=bbox_b[1][2]
+
+def get_room_objects(scene_idx, room_idx, loaded_objects, cleanup=True):
+    """ Return the objects within the room bbox. Cleanup unecessary objects. """
+    objects = []
+
+    room_bbox = get_room_bbox(scene_idx, room_idx, loaded_objects)
+    # print(room_bbox) #debug
+    for object in loaded_objects:
+        obj_bbox_8 = object.get_bound_box()
+        obj_bbox = [np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)]
+        if bbox_contained(obj_bbox, room_bbox):
+            flag_use = True
+            if cleanup:
+                obj_name = object.get_name()
+                for ban_word in OBJ_BAN_LIST:
+                    if ban_word in obj_name:
+                        flag_use=False 
+            if flag_use:
+                objects.append(object)
+
+    return objects
 
 
-
-def render_room_with_poses(scene_idx, poses, device='cuda:0', return_objects=False) -> List:
+def render_poses(poses) -> List:
     """ Render a scene with a list of poses. 
         No room idx is needed because the poses can be anywhere in the room. """
-
-    bproc.init(compute_device=device, compute_device_type='CUDA')
-    # load objects of the scene to blenderproc
-    loaded_objects = load_scene_objects(scene_idx)
 
     # add camera poses to render queue
     for cam2world_matrix in poses:
@@ -461,59 +565,60 @@ def render_room_with_poses(scene_idx, poses, device='cuda:0', return_objects=Fal
     # render
     bproc.renderer.set_light_bounces(diffuse_bounces=200, glossy_bounces=200, max_bounces=200, transmission_bounces=200, transparent_max_bounces=200)
     bproc.camera.set_intrinsics_from_K_matrix(K, IMG_WIDTH, IMG_HEIGHT)
-    # data = bproc.renderer.render(output_dir=RENDER_TEMP_DIR)
-    imgs = []
-    # for i in range(len(data['colors'])):
-    #     im_rgb = cv2.cvtColor(data['colors'][i], cv2.COLOR_BGR2RGB)
-    #     imgs.append(im_rgb)
+    data = bproc.renderer.render(output_dir=RENDER_TEMP_DIR)
+    imgs = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in data['colors']]
 
-    if return_objects:
-        return imgs, loaded_objects
-    else:
-        return imgs
-
-def get_objects_in_room(scene_idx, room_idx, loaded_objects):
-    """ Return the objects within the room bbox. """
-    objects = []
-    
-    pass
-
-    return objects
+    return imgs
 
 
 if __name__ == '__main__':
+
     construct_scene_list()
     scene_idx = 3
     room_idx = 0
     render = True
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-    poses = generate_four_corner_poses(scene_idx, room_idx)
-    imgs, loaded_objects = render_room_with_poses(scene_idx, poses, return_objects=True)
+
+    # init and load objects to blenderproc
+    bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
+    loaded_objects = load_scene_objects(scene_idx)
+
+    # get poses
+    room_objects = get_room_objects(scene_idx, room_idx, loaded_objects)
+    print('# objects:', len(room_objects))
+    input('Press Enter to continue...')
+    room_bbox = get_room_bbox(scene_idx, room_idx, loaded_objects)
+    poses = generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, global_poses=True, closeup_poses=True, num_poses_per_object=8)
+
+    # get 4 corner poses
+    # poses = generate_four_corner_poses(scene_idx, room_idx)
+
+    # render and save images
+    imgs = render_poses(poses)
     for i in range(len(imgs)):
         cv2.imwrite(os.path.join(RENDER_TEMP_DIR, '{}.png'.format(i)), imgs[i])
 
-    # debug
-    imgs = []
-    for i in range(4):
-        imgs.append(cv2.imread(os.path.join(RENDER_TEMP_DIR, '{}_544.png'.format(i))))
 
-    aabb_codes, labels = [], []
-    for object in loaded_objects:
+    # get bboxes, labels, colors
+    aabb_codes, labels, colors = [], [], []
+    for object in room_objects:
         bbox = object.get_bound_box()
         aabb_codes.append(np.concatenate([np.min(bbox, axis=0), np.max(bbox, axis=0)], axis=0))
         labels.append(object.get_name())
+        color = np.random.choice(range(256), size=3)
+        colors.append((int(color[0]), int(color[1]), int(color[2])))
     
+    # project bboxes to images
     imgs_projected = []
     for img, pose in zip(imgs, poses):
-        imgs_projected.append(project_bbox_to_image(img, K, np.linalg.inv(pose), aabb_codes, labels))
+        imgs_projected.append(project_bbox_to_image(img, K, np.linalg.inv(pose), aabb_codes, labels, colors))
     
+    # save projected images
     for i, img in enumerate(imgs_projected):
-        cv2.imwrite(os.path.join(RENDER_TEMP_DIR, '{}_projected.png'.format(i)), img)
+        cv2.imwrite(os.path.join(RENDER_TEMP_DIR, 'proj_{}.png'.format(i)), img)
     
     
-        
-
     # if render:
     #     render_room(scene_idx=scene_idx, room_idx=room_idx, device='cuda:0')
     # else:

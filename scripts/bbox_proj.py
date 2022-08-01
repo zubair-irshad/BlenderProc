@@ -1,11 +1,5 @@
-from utils import *
-from scipy.spatial.transform import Rotation as R
 from PIL import Image, ImageDraw, ImageFont
-from typing import List
-from tqdm import tqdm
-import xml.etree.ElementTree as ET
 import numpy as np
-import os
 import cv2
 
 def get_aabb_coords(aabb_code):
@@ -46,9 +40,12 @@ def project(intrinsic_mat,  # [3x3]
         box_coords_pic[:2, i] /= box_coords_pic[2, i]
     final_coords = np.array(np.transpose(box_coords_pic[:2, :], [1, 0]).astype(np.int16))
 
+    # special for 3D front: y = height - y 
+    final_coords[:, 1] = intrinsic_mat[1,2]*2 - final_coords[:, 1]
+
     #-- Report whether the whole object is in front of camera.
     in_front = True
-    if np.sum(box_coords_cam[2,:]>0) < 4: # not in_front: less than 4 coords are in front of the camera
+    if np.sum(box_coords_cam[2,:]<0) <= 6: # not in_front: less than 6 coords are in front of the camera
         in_front = False 
 
     return final_coords, in_front
@@ -90,14 +87,14 @@ def project_bbox_to_image(img, # PIL image
                           intrinsic_mat,  # [3x3]
                           pose,  # [4x4], world coord -> camera coord
                           aabb_codes,  # [Nx6]
-                          labels # [n x str]
+                          labels, # [n x str]
+                          colors # a list of n tuples
                           ):
     """Project a list of bounding boxes to an image. Return the image wiht bounding boxes drawn. """
     img_with_bbox = img.copy()
-    for aabb_code, label in zip(aabb_codes, labels):
+    for aabb_code, label, color in zip(aabb_codes, labels, colors):
         bbox_coords = get_aabb_coords(aabb_code)
         pic_coords, in_front = project(intrinsic_mat, pose, bbox_coords)
-        color = np.random.choice(range(256), size=3)
         if in_front:
-            draw_bbox(img_with_bbox, pic_coords, (int(color[0]), int(color[1]), int(color[2])), label)
+            draw_bbox(img_with_bbox, pic_coords, color, label)
     return img_with_bbox
