@@ -421,7 +421,7 @@ def pos_in_bbox(pos, bbox):
     Check if a point is inside a bounding box.
     Input:
         pos: 3 x 1
-        bbox: 6 x 1
+        bbox: 2 x 3
     Output:
         True or False
     """
@@ -442,7 +442,8 @@ def generate_four_corner_poses(scene_idx, room_idx):
 
 def check_pos_valid(pos, room_objects, room_bbox):
     """ Check if the position is in the room, not too close to walls and not conflicting with other objects. """
-    if not pos_in_bbox(pos, room_bbox):
+    room_bbox_small = [[item+0.5 for item in room_bbox[0]], [item-0.5 for item in room_bbox[1]]]
+    if not pos_in_bbox(pos, room_bbox_small):
         return False
     for obj in room_objects:
         obj_bbox_8 = obj.get_bound_box()
@@ -452,24 +453,34 @@ def check_pos_valid(pos, room_objects, room_bbox):
 
     return True
 
-def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, global_poses=True, closeup_poses=True, num_poses_per_object=8):
+def plot_3d_point_cloud(data):
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+
+    x = data[:, 0]
+    y = data[:, 1]
+    z = data[:, 2]
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x, y, z)
+    plt.savefig('./test.png')
+
+def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_per_object=8, num_poses_global=50):
     pass
     """ Return a list of poses including global poses and close-up poses for each object."""
 
     poses = []
-    num_poses_per_object = 8
-
-    # TODO: implement global poses
-    if global_poses:
-        pass
+    h_global = 1.2
 
     # close-up poses for each object.
-    if closeup_poses:
+    if num_poses_per_object>0:
         for obj in room_objects:
             obj_bbox_8 = obj.get_bound_box()
             obj_bbox = [np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)]
             cent = np.mean(obj_bbox_8, axis=0)
-            rad = np.linalg.norm(obj_bbox[1]-obj_bbox[0])/2 * 1.5
+            rad = np.linalg.norm(obj_bbox[1]-obj_bbox[0])/2 * 1.6 # how close the camera is to the object
+            if np.max(obj_bbox[1]-obj_bbox[0])<1:
+                rad *= 1.6 # handle small objects
 
             positions = []
             n_hori_sects = 30
@@ -497,6 +508,33 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, global_pos
                 positions = positions[:num_poses_per_object]
 
             poses.extend(c2w_from_locs_and_at(positions, cent))
+
+    # global poses
+    if num_poses_global>0:
+        corners = ROOM_CONFIG[scene_idx][room_idx]['corners']
+        x1, y1, x2, y2 = corners[0][0], corners[0][1], corners[1][0], corners[1][1]
+        rm_cent = np.array([(x1+x2)/2, (y1+y2)/2, h_global])
+
+        positions = []
+        rad_bound = [0.8, 5]
+        theta_bound = [0, 2*pi]
+        phi_bound = [-pi/12, pi/8]
+        n_try = 100000
+        for i in range(n_try):
+            rad = np.random.uniform(rad_bound[0], rad_bound[1])
+            theta = np.random.uniform(theta_bound[0], theta_bound[1])
+            phi = np.random.uniform(phi_bound[0], phi_bound[1])
+            pos = [rad * cos(phi)*cos(theta), rad * cos(phi)*sin(theta), rad * sin(phi)] + rm_cent # in position
+            if check_pos_valid(pos, room_objects, room_bbox):
+                positions.append(pos)
+
+            if len(positions) >= num_poses_global:
+                break
+            elif len(positions) >= n_try:
+                raise Exception("Cannot generate enough global images, check room configurations")
+        positions = np.array(positions)
+
+        poses.extend(c2w_from_locs_and_at(positions, rm_cent))
 
     return poses
 
@@ -570,14 +608,65 @@ def render_poses(poses) -> List:
 
     return imgs
 
+##################################### save to dataset #####################################
+
+def save_in_ngp_format(imgs, poses, room_bbox, dst_dir):
+    """ Save images and poses to ngp format dataset. """
+
+    # TODO: implement save_in_ngp_format()
+
+    pass
+
+def save_in_tensorf_format(imgs, poses, room_bbox, dst_dir):
+    print('Save in TensoRF format...')
+    from os.path import join
+    if os.path.isdir(dst_dir):
+        shutil.rmtree(dst_dir)
+    rgbdir = join(dst_dir, 'rgb')
+    posedir = join(dst_dir, 'pose')
+    os.mkdir(dst_dir)
+    os.mkdir(rgbdir)
+    os.mkdir(posedir)
+    
+    with open(join(dst_dir, 'intrinsic.txt'), 'w') as f:
+        for line in K:
+            f.write('%.1f %.1f %.1f\n' % (line[0], line[1], line[2]))
+    with open(join(dst_dir, 'bbox.txt'), 'w') as f:
+        f.write('{} {} {} {} {} {} 0.01\n'.format(*room_bbox[0], *room_bbox[1]))
+
+    for i, (img, pose) in enumerate(zip(imgs, poses)):
+        name = 'img%03d' % i
+        cv2.imwrite(join(rgbdir, name+'.jpg'), img)
+        with open(join(posedir, name+'.txt'), 'w') as f:
+            for line in pose:
+                f.write('%f %f %f %f\n' % (line[0], line[1], line[2], line[3]))
+    
+    # Writing to .json
+    frames = []
+    for i in range(len(poses)):
+        frames += [{"file_path": "rgb/img%03d.jpg" % i, "transform_matrix": poses[i].tolist()}]
+    train_frames = frames[:-6]
+    test_frames = frames[-6:]
+ 
+    with open(os.path.join(dst_dir, 'transforms_train.json'), 'w') as f:
+        f.write(json.dumps({"frames": train_frames}, indent=4))
+    with open(os.path.join(dst_dir, 'transforms_val.json'), 'w') as f:
+        f.write(json.dumps({"frames": test_frames}, indent=4))
+    with open(os.path.join(dst_dir, 'transforms_test.json'), 'w') as f:
+        f.write(json.dumps({"frames": test_frames}, indent=4))
+
+
+###########################################################################################
 
 if __name__ == '__main__':
 
     construct_scene_list()
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    render = True
     scene_idx = 3
     room_idx = 0
-    render = True
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    num_poses_global = 60
+    num_poses_per_object = 10
 
 
     # init and load objects to blenderproc
@@ -586,37 +675,44 @@ if __name__ == '__main__':
 
     # get poses
     room_objects = get_room_objects(scene_idx, room_idx, loaded_objects)
-    print('# objects:', len(room_objects))
-    input('Press Enter to continue...')
     room_bbox = get_room_bbox(scene_idx, room_idx, loaded_objects)
-    poses = generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, global_poses=True, closeup_poses=True, num_poses_per_object=8)
+    poses = generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, 
+                                num_poses_per_object = num_poses_per_object,
+                                num_poses_global = num_poses_global
+                                )
+    poses.extend(generate_four_corner_poses(scene_idx, room_idx)) # last four poses for validation
+    print('Summary: {}[global] + {}[closeup] x {}[object] + 4[corner] = {} poses'.format(num_poses_global, num_poses_per_object, len(room_objects), len(poses)))
+    print('Estimated time: {} minutes'.format(len(poses)*25//60))
+    input('Press Enter to continue...')
 
-    # get 4 corner poses
-    # poses = generate_four_corner_poses(scene_idx, room_idx)
-
-    # render and save images
+    # render img
     imgs = render_poses(poses)
-    for i in range(len(imgs)):
-        cv2.imwrite(os.path.join(RENDER_TEMP_DIR, '{}.png'.format(i)), imgs[i])
+
+    # save to ngp format
+    save_in_tensorf_format(imgs, poses, room_bbox, '/data2/jhuangce/BlenderProc/FRONT3D_render/tensorf_test')
+
+    # # save images
+    # for i in range(len(imgs)):
+    #     cv2.imwrite(os.path.join(RENDER_TEMP_DIR, '{}.png'.format(i)), imgs[i])
 
 
-    # get bboxes, labels, colors
-    aabb_codes, labels, colors = [], [], []
-    for object in room_objects:
-        bbox = object.get_bound_box()
-        aabb_codes.append(np.concatenate([np.min(bbox, axis=0), np.max(bbox, axis=0)], axis=0))
-        labels.append(object.get_name())
-        color = np.random.choice(range(256), size=3)
-        colors.append((int(color[0]), int(color[1]), int(color[2])))
+    # # get bboxes, labels, colors
+    # aabb_codes, labels, colors = [], [], []
+    # for object in room_objects:
+    #     bbox = object.get_bound_box()
+    #     aabb_codes.append(np.concatenate([np.min(bbox, axis=0), np.max(bbox, axis=0)], axis=0))
+    #     labels.append(object.get_name())
+    #     color = np.random.choice(range(256), size=3)
+    #     colors.append((int(color[0]), int(color[1]), int(color[2])))
     
-    # project bboxes to images
-    imgs_projected = []
-    for img, pose in zip(imgs, poses):
-        imgs_projected.append(project_bbox_to_image(img, K, np.linalg.inv(pose), aabb_codes, labels, colors))
+    # # project bboxes to images
+    # imgs_projected = []
+    # for img, pose in zip(imgs, poses):
+    #     imgs_projected.append(project_bbox_to_image(img, K, np.linalg.inv(pose), aabb_codes, labels, colors))
     
-    # save projected images
-    for i, img in enumerate(imgs_projected):
-        cv2.imwrite(os.path.join(RENDER_TEMP_DIR, 'proj_{}.png'.format(i)), img)
+    # # save projected images
+    # for i, img in enumerate(imgs_projected):
+    #     cv2.imwrite(os.path.join(RENDER_TEMP_DIR, 'proj_{}.png'.format(i)), img)
     
     
     # if render:

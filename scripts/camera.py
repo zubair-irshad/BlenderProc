@@ -11,7 +11,7 @@ CAMERA_LOCS = {0: [[0, 2.5], [1.4, -0.8]],
 # bbox: the bounding box of the room
 # corners: two of the corner camera locations
 # Example:{'center': (, ), 'a': , 'b': , 'num_cam': 16, 'bbox': [[, ], [, ]]},
-ROOM_CONFIG = {3: {0: {'center': (3, 2.2), 'a': 1.5, 'b': 2.2, 'num_cam': 16, 'bbox': [[0.8, -1.5], [5, 5]], 'corners': [[1.2, -0.2], [4.8, 4.5]]},
+ROOM_CONFIG = {3: {0: {'center': (3, 2.2), 'a': 1.5, 'b': 2.2, 'num_cam': 16, 'bbox': [[0.8, -1.2], [5, 5]], 'corners': [[1.2, -0.2], [4.8, 4.5]]},
                    1: {'center': (3.3, -4.8), 'a': 1.3, 'b': 2, 'num_cam': 8, 'bbox': [[1.1, -7.5], [5.2, -2]]},
                    2: {'center': (-0.4, -5), 'a': 1.5, 'b': 2.1, 'num_cam': 16, 'bbox': [[-2.5, -7.5], [1.3, -2.3]]}},
                4: {0: {'center': (4.5, -2.3), 'a': 1.7, 'b': 1, 'num_cam': 16, 'bbox': [[1.5, -4], [6.5, -0.5]], }}}
