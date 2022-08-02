@@ -406,15 +406,20 @@ def look_at_rotation(camera_position, at=None, up=None, inverse=False, cv=False)
     R = np.concatenate([x_axis[:, None], y_axis[:, None], z_axis[:, None]], axis=1)
     return R
 
-def c2w_from_locs_and_at(locs, at, up=(0, 0, 1)):
-    """ Convert camera locations and directions to camera2world matrix. """
-    c2ws = []
-    for cam_pos in locs:
-        c2w = np.eye(4)
-        cam_rot = look_at_rotation(cam_pos, at=at, up=up, inverse=False, cv=True)
-        c2w[:3, 3], c2w[:3, :3] = cam_pos, cam_rot
-        c2ws.append(c2w)
-    return c2ws
+def c2w_from_loc_and_at(cam_pos, at, up=(0, 0, 1)):
+    """ Convert camera location and direction to camera2world matrix. """
+    c2w = np.eye(4)
+    cam_rot = look_at_rotation(cam_pos, at=at, up=up, inverse=False, cv=True)
+    c2w[:3, 3], c2w[:3, :3] = cam_pos, cam_rot
+    return c2w
+
+    # c2ws = []
+    # for cam_pos in locs:
+    #     c2w = np.eye(4)
+    #     cam_rot = look_at_rotation(cam_pos, at=at, up=up, inverse=False, cv=True)
+    #     c2w[:3, 3], c2w[:3, :3] = cam_pos, cam_rot
+    #     c2ws.append(c2w)
+    # return c2ws
 
 def pos_in_bbox(pos, bbox):
     """
@@ -436,13 +441,13 @@ def generate_four_corner_poses(scene_idx, room_idx):
     at = [(x1+x2)/2, (y1+y2)/2, 1.2]
     locs = [[x1, y1, 2], [x1, y2, 2], [x2, y1, 2], [x2, y2, 2]]
 
-    c2ws = c2w_from_locs_and_at(locs, at)
+    c2ws = [c2w_from_loc_and_at(pos, at) for pos in locs]
     
     return c2ws
 
 def check_pos_valid(pos, room_objects, room_bbox):
     """ Check if the position is in the room, not too close to walls and not conflicting with other objects. """
-    room_bbox_small = [[item+0.5 for item in room_bbox[0]], [item-0.5 for item in room_bbox[1]]]
+    room_bbox_small = [[item+0.5 for item in room_bbox[0]], [room_bbox[1][0]-0.5, room_bbox[1][1]-0.5, room_bbox[1][2]-0.8]] # ceiling is lower
     if not pos_in_bbox(pos, room_bbox_small):
         return False
     for obj in room_objects:
@@ -478,7 +483,7 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
             obj_bbox_8 = obj.get_bound_box()
             obj_bbox = [np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)]
             cent = np.mean(obj_bbox_8, axis=0)
-            rad = np.linalg.norm(obj_bbox[1]-obj_bbox[0])/2 * 1.6 # how close the camera is to the object
+            rad = np.linalg.norm(obj_bbox[1]-obj_bbox[0])/2 * 1.7 # how close the camera is to the object
             if np.max(obj_bbox[1]-obj_bbox[0])<1:
                 rad *= 1.6 # handle small objects
 
@@ -507,7 +512,7 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
             if len(positions) > num_poses_per_object:
                 positions = positions[:num_poses_per_object]
 
-            poses.extend(c2w_from_locs_and_at(positions, cent))
+            poses.extend([c2w_from_loc_and_at(pos, cent) for pos in positions])
 
     # global poses
     if num_poses_global>0:
@@ -515,16 +520,40 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
         x1, y1, x2, y2 = corners[0][0], corners[0][1], corners[1][0], corners[1][1]
         rm_cent = np.array([(x1+x2)/2, (y1+y2)/2, h_global])
 
+        # # sphere model
+        # positions = []
+        # rad_bound = [0.8, 5]
+        # theta_bound = [0, 2*pi]
+        # phi_bound = [-pi/12, pi/8]
+        # n_try = 100000
+        # for i in range(n_try):
+        #     rad = np.random.uniform(rad_bound[0], rad_bound[1])
+        #     theta = np.random.uniform(theta_bound[0], theta_bound[1])
+        #     phi = np.random.uniform(phi_bound[0], phi_bound[1])
+        #     pos = [rad * cos(phi)*cos(theta), rad * cos(phi)*sin(theta), rad * sin(phi)] + rm_cent # in position
+        #     if check_pos_valid(pos, room_objects, room_bbox):
+        #         positions.append(pos)
+
+        #     if len(positions) >= num_poses_global:
+        #         break
+        #     elif len(positions) >= n_try:
+        #         raise Exception("Cannot generate enough global images, check room configurations")
+        # positions = np.array(positions)
+
+        # poses.extend([c2w_from_loc_and_at(pos, rm_cent) for pos in positions])
+
+        # cylinder model
         positions = []
-        rad_bound = [0.8, 5]
+        rad_bound = [1, 5]
         theta_bound = [0, 2*pi]
-        phi_bound = [-pi/12, pi/8]
+        h_bound = [0.8, 2.5]
+        view_at_height_bound = [1, 2]
         n_try = 100000
         for i in range(n_try):
             rad = np.random.uniform(rad_bound[0], rad_bound[1])
             theta = np.random.uniform(theta_bound[0], theta_bound[1])
-            phi = np.random.uniform(phi_bound[0], phi_bound[1])
-            pos = [rad * cos(phi)*cos(theta), rad * cos(phi)*sin(theta), rad * sin(phi)] + rm_cent # in position
+            h = np.random.uniform(h_bound[0], h_bound[1])
+            pos = [rad * cos(theta), rad * sin(theta), h] + rm_cent # in position
             if check_pos_valid(pos, room_objects, room_bbox):
                 positions.append(pos)
 
@@ -534,7 +563,7 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
                 raise Exception("Cannot generate enough global images, check room configurations")
         positions = np.array(positions)
 
-        poses.extend(c2w_from_locs_and_at(positions, rm_cent))
+        poses.extend([c2w_from_loc_and_at(pos, [rm_cent[0], rm_cent[1], np.random.uniform(view_at_height_bound[0], view_at_height_bound[1])]) for pos in positions])
 
     return poses
 
@@ -646,7 +675,7 @@ def save_in_tensorf_format(imgs, poses, room_bbox, dst_dir):
     for i in range(len(poses)):
         frames += [{"file_path": "rgb/img%03d.jpg" % i, "transform_matrix": poses[i].tolist()}]
     train_frames = frames[:-6]
-    test_frames = frames[-6:]
+    test_frames = frames[-8:] # 2 global poses in train set, 2 global poses not in train set, 4 corner poses
  
     with open(os.path.join(dst_dir, 'transforms_train.json'), 'w') as f:
         f.write(json.dumps({"frames": train_frames}, indent=4))
@@ -661,12 +690,14 @@ def save_in_tensorf_format(imgs, poses, room_bbox, dst_dir):
 if __name__ == '__main__':
 
     construct_scene_list()
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     render = True
     scene_idx = 3
     room_idx = 0
-    num_poses_global = 60
+    num_poses_global = 100
     num_poses_per_object = 10
+    generate_corners = True
+    dst_dir = '/data2/jhuangce/BlenderProc/FRONT3D_render/tensorf_test'
 
 
     # init and load objects to blenderproc
@@ -680,8 +711,9 @@ if __name__ == '__main__':
                                 num_poses_per_object = num_poses_per_object,
                                 num_poses_global = num_poses_global
                                 )
-    poses.extend(generate_four_corner_poses(scene_idx, room_idx)) # last four poses for validation
-    print('Summary: {}[global] + {}[closeup] x {}[object] + 4[corner] = {} poses'.format(num_poses_global, num_poses_per_object, len(room_objects), len(poses)))
+    if generate_corners:
+        poses.extend(generate_four_corner_poses(scene_idx, room_idx)) # last four poses for validation
+    print('Summary: {}[global] + {}[closeup] x {}[object] + {}[corner] = {} poses'.format(num_poses_global, num_poses_per_object, len(room_objects), 4 if generate_corners else 0,len(poses)))
     print('Estimated time: {} minutes'.format(len(poses)*25//60))
     input('Press Enter to continue...')
 
@@ -689,7 +721,7 @@ if __name__ == '__main__':
     imgs = render_poses(poses)
 
     # save to ngp format
-    save_in_tensorf_format(imgs, poses, room_bbox, '/data2/jhuangce/BlenderProc/FRONT3D_render/tensorf_test')
+    save_in_tensorf_format(imgs, poses, room_bbox, dst_dir)
 
     # # save images
     # for i in range(len(imgs)):
