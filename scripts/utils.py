@@ -423,7 +423,9 @@ def pos_in_bbox(pos, bbox):
     Output:
         True or False
     """
-    return np.all(pos >= bbox[0]) and np.all(pos <= bbox[1])
+    return  pos[0] >= bbox[0][0] and pos[0] <= bbox[1][0] and \
+            pos[1] >= bbox[0][1] and pos[1] <= bbox[1][1] and \
+            pos[2] >= bbox[0][2] and pos[2] <= bbox[1][2]
 
 ############################## poses generation ##################################
 
@@ -480,7 +482,7 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
             cent = np.mean(obj_bbox_8, axis=0)
             rad = np.linalg.norm(obj_bbox[1]-obj_bbox[0])/2 * 1.7 # how close the camera is to the object
             if np.max(obj_bbox[1]-obj_bbox[0])<1:
-                rad *= 1.6 # handle small objects
+                rad *= 1.2 # handle small objects
 
             positions = []
             n_hori_sects = 30
