@@ -30,7 +30,7 @@ TEXTURE_DIR = '/data2/jhuangce/3D-FRONT-texture'
 MODEL_DIR = '/data2/jhuangce/3D-FUTURE-model'
 RENDER_TEMP_DIR = '/data2/jhuangce/BlenderProc/FRONT3D_render'
 SCENE_LIST = []
-OBJ_BAN_LIST = ['Baseboard', 'Pocket', 'Floor', 'SlabSide.', 'WallInner', 'Front', 'WallTop', 'WallBottom', 'Ceiling.', 'Nightstand.001', 'Nightstand.003', 'Ceiling Lamp']
+OBJ_BAN_LIST = ['Baseboard', 'Pocket', 'Floor', 'SlabSide.', 'WallInner', 'Front', 'WallTop', 'WallBottom', 'Ceiling.', 'Nightstand.001', 'Nightstand.003', 'Ceiling Lamp', 'accessory']
 
 def construct_scene_list():
     """ Construct a list of scenes and save to SCENE_LIST global variable. """
@@ -83,6 +83,7 @@ def load_scene_objects(scene_idx, overwrite=False):
         #     add_texture(obj, "/data2/jhuangce/3D-FRONT-texture/0a5adcc7-f17f-488f-9f95-8690cbc31321/texture.png")
 
     return loaded_objects
+
 
 def get_cameras_in_oval_trajectory(scene_idx, room_idx = None):
     """ Generate the camera locations and rotations in a room according to oval trajectory. """
@@ -413,14 +414,6 @@ def c2w_from_loc_and_at(cam_pos, at, up=(0, 0, 1)):
     c2w[:3, 3], c2w[:3, :3] = cam_pos, cam_rot
     return c2w
 
-    # c2ws = []
-    # for cam_pos in locs:
-    #     c2w = np.eye(4)
-    #     cam_rot = look_at_rotation(cam_pos, at=at, up=up, inverse=False, cv=True)
-    #     c2w[:3, 3], c2w[:3, :3] = cam_pos, cam_rot
-    #     c2ws.append(c2w)
-    # return c2ws
-
 def pos_in_bbox(pos, bbox):
     """
     Check if a point is inside a bounding box.
@@ -436,7 +429,8 @@ def pos_in_bbox(pos, bbox):
 
 def generate_four_corner_poses(scene_idx, room_idx):
     """ Return a list of matrices of 4 corner views in the room. """
-    corners = ROOM_CONFIG[scene_idx][room_idx]['corners']
+    bbox_xy = ROOM_CONFIG[scene_idx][room_idx]['bbox']
+    corners = [[i+0.3 for i in bbox_xy[0]], [i-0.3 for i in bbox_xy[1]]]
     x1, y1, x2, y2 = corners[0][0], corners[0][1], corners[1][0], corners[1][1]
     at = [(x1+x2)/2, (y1+y2)/2, 1.2]
     locs = [[x1, y1, 2], [x1, y2, 2], [x2, y1, 2], [x2, y2, 2]]
@@ -591,9 +585,11 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
         positions = np.array(positions)
 
         poses.extend([c2w_from_loc_and_at(pos, [rm_cent[0], rm_cent[1], pos[2]]) for pos in positions])
+
+        num_global = len(positions)
         
 
-    return poses
+    return poses, num_closeup, num_global
 
 
 #################################################################################
@@ -667,7 +663,7 @@ def render_poses(poses) -> List:
 
 ##################################### save to dataset #####################################
 
-def save_in_ngp_format(imgs, poses, room_bbox, intrinsic, dst_dir):
+def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_objects,  dst_dir):
     """ Save images and poses to ngp format dataset. """
     print('Save in TensoRF format...')
     from os.path import join
@@ -708,6 +704,23 @@ def save_in_ngp_format(imgs, poses, room_bbox, intrinsic, dst_dir):
         out['frames'].append(frame)
     with open(join(dst_dir, 'transforms.json'), 'w') as f:
         json.dump(out, f, indent=4)
+    
+    gt = {
+            "room_bbox": np.array(room_bbox).tolist(),
+            "num_room_objects": len(room_objects),
+            "room_objects": []
+    }
+    for obj in room_objects:
+        obj_bbox_8 = obj.get_bound_box()
+        obj_bbox = np.array([np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)])
+        obj_info = {
+            "label": obj.get_name(),
+            "bbox": obj_bbox.tolist()
+        }
+        gt['room_objects'].append(obj_info)
+
+    with open(join(dst_dir, 'info.json'), 'w') as f:
+        json.dump(gt, f, indent=4)
     
     if imgs == None: # support late rendering
         imgs = render_poses(poses)
@@ -763,41 +776,38 @@ if __name__ == '__main__':
     render = True
     scene_idx = 3
     room_idx = 1
-    num_poses_global = 100
-    num_poses_per_object = 0
+    num_poses_global = 100 # arbitrary number
+    num_poses_per_object = 10
     generate_corners = False
     dst_dir = '/data2/jhuangce/BlenderProc/FRONT3D_render/{:03d}_{}_ngp'.format(scene_idx, room_idx)
-
 
     # init and load objects to blenderproc
     bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
     loaded_objects = load_scene_objects(scene_idx)
 
     # get poses
+    poses = []
     room_objects = get_room_objects(scene_idx, room_idx, loaded_objects)
     room_bbox = get_room_bbox(scene_idx, room_idx, loaded_objects)
-    poses, num_global, num_closeup = generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, 
+    poses, num_closeup, num_global = generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, 
                                 num_poses_per_object = num_poses_per_object,
                                 num_poses_global = num_poses_global
                                 )
     if generate_corners:
         poses.extend(generate_four_corner_poses(scene_idx, room_idx)) # last four poses for validation
-    print('Summary: {}[global] + {}[closeup] x {}[object] + {}[corner] = {} poses'.format(num_poses_global, num_poses_per_object, len(room_objects), 4 if generate_corners else 0,len(poses)))
+    print('Summary: {}[global] + {}[closeup] x {}[object] + {}[corner] = {} poses'.format(num_global, num_poses_per_object, len(room_objects), 4 if generate_corners else 0,len(poses)))
     print('Estimated time: {} minutes'.format(len(poses)*25//60))
     input('Press Enter to continue...')
 
-    # render img
-    # imgs = render_poses(poses)
-
-    # save to ngp format
-    save_in_ngp_format(None, poses, room_bbox, K, dst_dir)
+    # save to ngp format (with late rendering)
+    save_in_ngp_format(None, poses, K, room_bbox, room_objects, dst_dir)
 
     # # save images
     # for i in range(len(imgs)):
     #     cv2.imwrite(os.path.join(RENDER_TEMP_DIR, '{}.png'.format(i)), imgs[i])
 
 
-    # # get bboxes, labels, colors
+    # get bboxes, labels, colors
     # aabb_codes, labels, colors = [], [], []
     # for object in room_objects:
     #     bbox = object.get_bound_box()
@@ -806,12 +816,12 @@ if __name__ == '__main__':
     #     color = np.random.choice(range(256), size=3)
     #     colors.append((int(color[0]), int(color[1]), int(color[2])))
     
-    # # project bboxes to images
+    # project bboxes to images
     # imgs_projected = []
     # for img, pose in zip(imgs, poses):
     #     imgs_projected.append(project_bbox_to_image(img, K, np.linalg.inv(pose), aabb_codes, labels, colors))
     
-    # # save projected images
+    # save projected images
     # for i, img in enumerate(imgs_projected):
     #     cv2.imwrite(os.path.join(RENDER_TEMP_DIR, 'proj_{}.png'.format(i)), img)
     
