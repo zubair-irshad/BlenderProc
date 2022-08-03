@@ -475,6 +475,7 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
     """ Return a list of poses including global poses and close-up poses for each object."""
 
     poses = []
+    num_closeup, num_global = 0, 0
     h_global = 1.2
 
     # close-up poses for each object.
@@ -514,10 +515,12 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
 
             poses.extend([c2w_from_loc_and_at(pos, cent) for pos in positions])
 
+            num_closeup = len(positions)
+
     # global poses
     if num_poses_global>0:
-        corners = ROOM_CONFIG[scene_idx][room_idx]['corners']
-        x1, y1, x2, y2 = corners[0][0], corners[0][1], corners[1][0], corners[1][1]
+        bbox = ROOM_CONFIG[scene_idx][room_idx]['bbox']
+        x1, y1, x2, y2 = bbox[0][0], bbox[0][1], bbox[1][0], bbox[1][1]
         rm_cent = np.array([(x1+x2)/2, (y1+y2)/2, h_global])
 
         # # sphere model
@@ -543,27 +546,52 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
         # poses.extend([c2w_from_loc_and_at(pos, rm_cent) for pos in positions])
 
         # cylinder model
-        positions = []
-        rad_bound = [1, 5]
-        theta_bound = [0, 2*pi]
-        h_bound = [0.8, 2.5]
-        view_at_height_bound = [1, 2]
-        n_try = 100000
-        for i in range(n_try):
-            rad = np.random.uniform(rad_bound[0], rad_bound[1])
-            theta = np.random.uniform(theta_bound[0], theta_bound[1])
-            h = np.random.uniform(h_bound[0], h_bound[1])
-            pos = [rad * cos(theta), rad * sin(theta), h] + rm_cent # in position
-            if check_pos_valid(pos, room_objects, room_bbox):
-                positions.append(pos)
+        # positions = []
+        # rad_bound = [1, 5]
+        # theta_bound = [0, 2*pi]
+        # h_bound = [0.8, 2.5]
+        # view_at_height_bound = [1, 2]
+        # n_try = 100000
+        # for i in range(n_try):
+        #     rad = np.random.uniform(rad_bound[0], rad_bound[1])
+        #     theta = np.random.uniform(theta_bound[0], theta_bound[1])
+        #     h = np.random.uniform(h_bound[0], h_bound[1])
+        #     pos = [rad * cos(theta), rad * sin(theta), h] + rm_cent # in position
+        #     if check_pos_valid(pos, room_objects, room_bbox):
+        #         positions.append(pos)
 
-            if len(positions) >= num_poses_global:
-                break
-            elif len(positions) >= n_try:
-                raise Exception("Cannot generate enough global images, check room configurations")
+        #     if len(positions) >= num_poses_global:
+        #         break
+        #     elif len(positions) >= n_try:
+        #         raise Exception("Cannot generate enough global images, check room configurations")
+        # positions = np.array(positions)
+
+        # poses.extend([c2w_from_loc_and_at(pos, [rm_cent[0], rm_cent[1], np.random.uniform(view_at_height_bound[0], view_at_height_bound[1])]) for pos in positions])
+
+        # flower model
+        
+        rad_bound = [0.3, 5]
+        rad_intv = 0.25
+        theta_bound = [0, 2*pi]
+        theta_sects = 15
+        theta_intv = (theta_bound[1] - theta_bound[0]) / theta_sects
+        h_bound = [0.8, 2.0]
+
+        positions = []
+        theta = theta_bound[0]
+        for i in range(theta_sects):
+            rad = rad_bound[0]
+            while rad < rad_bound[1]:
+                h = np.random.uniform(h_bound[0], h_bound[1])
+                pos = [rm_cent[0] + rad * cos(theta), rm_cent[1] + rad * sin(theta), h]
+                if check_pos_valid(pos, room_objects, room_bbox):
+                    positions.append(pos)
+                rad += rad_intv
+            theta += theta_intv
         positions = np.array(positions)
 
-        poses.extend([c2w_from_loc_and_at(pos, [rm_cent[0], rm_cent[1], np.random.uniform(view_at_height_bound[0], view_at_height_bound[1])]) for pos in positions])
+        poses.extend([c2w_from_loc_and_at(pos, [rm_cent[0], rm_cent[1], pos[2]]) for pos in positions])
+        
 
     return poses
 
@@ -639,12 +667,53 @@ def render_poses(poses) -> List:
 
 ##################################### save to dataset #####################################
 
-def save_in_ngp_format(imgs, poses, room_bbox, dst_dir):
+def save_in_ngp_format(imgs, poses, room_bbox, intrinsic, dst_dir):
     """ Save images and poses to ngp format dataset. """
+    print('Save in TensoRF format...')
+    from os.path import join
+    if os.path.isdir(dst_dir):
+        shutil.rmtree(dst_dir)
+    imgdir = join(dst_dir, 'images')
+    os.mkdir(dst_dir)
+    os.mkdir(imgdir)
 
-    # TODO: implement save_in_ngp_format()
+    fx = intrinsic[0, 0]
+    fy = intrinsic[1, 1]
+    cx = intrinsic[0, 2]
+    cy = intrinsic[1, 2]
+    angle_x = 2*np.arctan(cx/fx)
+    angle_y = 2*np.arctan(cy/fy)
 
-    pass
+    out = {
+			"camera_angle_x": float(angle_x),
+			"camera_angle_y": float(angle_y),
+			"fl_x": float(fx),
+			"fl_y": float(fy),
+			"k1": 0,
+			"k2": 0,
+			"p1": 0,
+			"p2": 0,
+			"cx": float(cx),
+			"cy": float(cy),
+			"w": int(IMG_WIDTH),
+			"h": int(IMG_HEIGHT),
+			"aabb_scale": 16,
+			"frames": [],
+		}
+    for i, pose in enumerate(poses):
+        frame = {
+            "file_path": join('images/{:04d}.jpg'.format(i)),
+            "transform_matrix": pose.tolist()
+        }
+        out['frames'].append(frame)
+    with open(join(dst_dir, 'transforms.json'), 'w') as f:
+        json.dump(out, f, indent=4)
+    
+    if imgs == None: # support late rendering
+        imgs = render_poses(poses)
+    for i, img in enumerate(imgs):
+        cv2.imwrite(join(imgdir, '{:04d}.jpg'.format(i)), img)
+
 
 def save_in_tensorf_format(imgs, poses, room_bbox, dst_dir):
     print('Save in TensoRF format...')
@@ -693,11 +762,11 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     render = True
     scene_idx = 3
-    room_idx = 0
+    room_idx = 1
     num_poses_global = 100
-    num_poses_per_object = 10
-    generate_corners = True
-    dst_dir = '/data2/jhuangce/BlenderProc/FRONT3D_render/tensorf_test'
+    num_poses_per_object = 0
+    generate_corners = False
+    dst_dir = '/data2/jhuangce/BlenderProc/FRONT3D_render/{:03d}_{}_ngp'.format(scene_idx, room_idx)
 
 
     # init and load objects to blenderproc
@@ -707,7 +776,7 @@ if __name__ == '__main__':
     # get poses
     room_objects = get_room_objects(scene_idx, room_idx, loaded_objects)
     room_bbox = get_room_bbox(scene_idx, room_idx, loaded_objects)
-    poses = generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, 
+    poses, num_global, num_closeup = generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, 
                                 num_poses_per_object = num_poses_per_object,
                                 num_poses_global = num_poses_global
                                 )
@@ -718,10 +787,10 @@ if __name__ == '__main__':
     input('Press Enter to continue...')
 
     # render img
-    imgs = render_poses(poses)
+    # imgs = render_poses(poses)
 
     # save to ngp format
-    save_in_tensorf_format(imgs, poses, room_bbox, dst_dir)
+    save_in_ngp_format(None, poses, room_bbox, K, dst_dir)
 
     # # save images
     # for i in range(len(imgs)):
