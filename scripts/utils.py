@@ -15,7 +15,7 @@ import re
 import imageio
 import sys
 sys.path.append('/data2/jhuangce/BlenderProc/scripts')
-from camera import *
+from render_configs import *
 import json
 from typing import List
 from bbox_proj import project_bbox_to_image
@@ -28,9 +28,9 @@ sin = np.sin
 LAYOUT_DIR = '/data2/jhuangce/3D-FRONT'
 TEXTURE_DIR = '/data2/jhuangce/3D-FRONT-texture'
 MODEL_DIR = '/data2/jhuangce/3D-FUTURE-model'
-RENDER_TEMP_DIR = '/data2/jhuangce/BlenderProc/FRONT3D_render'
+RENDER_TEMP_DIR = '/data2/jhuangce/BlenderProc/FRONT3D_render/temp'
 SCENE_LIST = []
-OBJ_BAN_LIST = ['Baseboard', 'Pocket', 'Floor', 'SlabSide.', 'WallInner', 'Front', 'WallTop', 'WallBottom', 'Ceiling.', 'Nightstand.001', 'Nightstand.003', 'Ceiling Lamp', 'accessory']
+
 
 def construct_scene_list():
     """ Construct a list of scenes and save to SCENE_LIST global variable. """
@@ -224,8 +224,8 @@ class FloorPlan():
         """
         return int(point_3d[0]*self.scale - self.scene_min[0]*self.scale + self.margin), self.height-int(point_3d[1]*self.scale - self.scene_min[1]*self.scale + self.margin)
     
-    def save(self, file_name):
-        cv2.imwrite(f'./cached/{self.scene_idx}/{file_name}', self.image)
+    def save(self, file_name, dst_dir):
+        cv2.imwrite(join(dst_dir, file_name), self.image)
     
     def drawsamples_and_save(self):
         self.draw_objects()
@@ -233,13 +233,13 @@ class FloorPlan():
         self.draw_samples() # customizable
         self.save('floor_plan.jpg')
     
-    def drawgroups_and_save(self):
-        locs, rots = get_cameras_in_oval_trajectory(self.scene_idx)
+    def drawgroups_and_save(self, dst_dir):
         self.draw_objects()
         self.draw_coords()
-        self.draw_samples(locs, rots) # customizable
+        # locs, rots = get_cameras_in_oval_trajectory(self.scene_idx)
+        # self.draw_samples(locs, rots) # customizable
         self.draw_room_bbox()
-        self.save('floor_plan2.jpg')
+        self.save('floor_plan.jpg', dst_dir)
 
 def image_to_video(img_dir, video_dir):
     """ Args: 
@@ -466,7 +466,7 @@ def plot_3d_point_cloud(data):
     ax.scatter(x, y, z)
     plt.savefig('./test.png')
 
-def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_per_object=8, num_poses_global=50):
+def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_per_object, max_global_pos, global_density):
     pass
     """ Return a list of poses including global poses and close-up poses for each object."""
 
@@ -514,60 +514,14 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
             num_closeup = len(positions)
 
     # global poses
-    if num_poses_global>0:
+    if max_global_pos>0:
         bbox = ROOM_CONFIG[scene_idx][room_idx]['bbox']
         x1, y1, x2, y2 = bbox[0][0], bbox[0][1], bbox[1][0], bbox[1][1]
         rm_cent = np.array([(x1+x2)/2, (y1+y2)/2, h_global])
 
-        # # sphere model
-        # positions = []
-        # rad_bound = [0.8, 5]
-        # theta_bound = [0, 2*pi]
-        # phi_bound = [-pi/12, pi/8]
-        # n_try = 100000
-        # for i in range(n_try):
-        #     rad = np.random.uniform(rad_bound[0], rad_bound[1])
-        #     theta = np.random.uniform(theta_bound[0], theta_bound[1])
-        #     phi = np.random.uniform(phi_bound[0], phi_bound[1])
-        #     pos = [rad * cos(phi)*cos(theta), rad * cos(phi)*sin(theta), rad * sin(phi)] + rm_cent # in position
-        #     if check_pos_valid(pos, room_objects, room_bbox):
-        #         positions.append(pos)
-
-        #     if len(positions) >= num_poses_global:
-        #         break
-        #     elif len(positions) >= n_try:
-        #         raise Exception("Cannot generate enough global images, check room configurations")
-        # positions = np.array(positions)
-
-        # poses.extend([c2w_from_loc_and_at(pos, rm_cent) for pos in positions])
-
-        # cylinder model
-        # positions = []
-        # rad_bound = [1, 5]
-        # theta_bound = [0, 2*pi]
-        # h_bound = [0.8, 2.5]
-        # view_at_height_bound = [1, 2]
-        # n_try = 100000
-        # for i in range(n_try):
-        #     rad = np.random.uniform(rad_bound[0], rad_bound[1])
-        #     theta = np.random.uniform(theta_bound[0], theta_bound[1])
-        #     h = np.random.uniform(h_bound[0], h_bound[1])
-        #     pos = [rad * cos(theta), rad * sin(theta), h] + rm_cent # in position
-        #     if check_pos_valid(pos, room_objects, room_bbox):
-        #         positions.append(pos)
-
-        #     if len(positions) >= num_poses_global:
-        #         break
-        #     elif len(positions) >= n_try:
-        #         raise Exception("Cannot generate enough global images, check room configurations")
-        # positions = np.array(positions)
-
-        # poses.extend([c2w_from_loc_and_at(pos, [rm_cent[0], rm_cent[1], np.random.uniform(view_at_height_bound[0], view_at_height_bound[1])]) for pos in positions])
-
         # flower model
-        
         rad_bound = [0.3, 5]
-        rad_intv = 0.25
+        rad_intv = global_density
         theta_bound = [0, 2*pi]
         theta_sects = 15
         theta_intv = (theta_bound[1] - theta_bound[0]) / theta_sects
@@ -585,6 +539,9 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
                 rad += rad_intv
             theta += theta_intv
         positions = np.array(positions)
+
+        if len(positions) > max_global_pos:
+            positions = positions[:max_global_pos]
 
         poses.extend([c2w_from_loc_and_at(pos, [rm_cent[0], rm_cent[1], pos[2]]) for pos in positions])
 
@@ -640,14 +597,22 @@ def get_room_objects(scene_idx, room_idx, loaded_objects, cleanup=True):
                 obj_name = object.get_name()
                 for ban_word in OBJ_BAN_LIST:
                     if ban_word in obj_name:
-                        flag_use=False 
+                        flag_use=False
+                if 'keyword_ban_list' in ROOM_CONFIG[scene_idx][room_idx].keys():
+                    for ban_word in ROOM_CONFIG[scene_idx][room_idx]['keyword_ban_list']:
+                        if ban_word in obj_name:
+                            flag_use=False
+                if 'fullname_ban_list' in ROOM_CONFIG[scene_idx][room_idx].keys():
+                    for fullname in ROOM_CONFIG[scene_idx][room_idx]['fullname_ban_list']:
+                        if fullname == obj_name:
+                            flag_use=False
             if flag_use:
                 objects.append(object)
 
     return objects
 
 
-def render_poses(poses) -> List:
+def render_poses(poses, temp_dir=RENDER_TEMP_DIR) -> List:
     """ Render a scene with a list of poses. 
         No room idx is needed because the poses can be anywhere in the room. """
 
@@ -658,7 +623,7 @@ def render_poses(poses) -> List:
     # render
     bproc.renderer.set_light_bounces(diffuse_bounces=200, glossy_bounces=200, max_bounces=200, transmission_bounces=200, transparent_max_bounces=200)
     bproc.camera.set_intrinsics_from_K_matrix(K, IMG_WIDTH, IMG_HEIGHT)
-    data = bproc.renderer.render(output_dir=RENDER_TEMP_DIR)
+    data = bproc.renderer.render(output_dir=temp_dir)
     imgs = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in data['colors']]
 
     return imgs
@@ -667,13 +632,14 @@ def render_poses(poses) -> List:
 
 def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_objects,  dst_dir):
     """ Save images and poses to ngp format dataset. """
-    print('Save in TensoRF format...')
+    print('Save in instant-ngp format...')
     from os.path import join
-    if os.path.isdir(dst_dir):
-        shutil.rmtree(dst_dir)
     imgdir = join(dst_dir, 'images')
-    os.mkdir(dst_dir)
-    os.mkdir(imgdir)
+
+    if os.path.isdir(imgdir) and len(os.listdir(imgdir))>0:
+        input("Warning: The existing images will be overwritten. Press enter to continue...")
+        shutil.rmtree(imgdir)
+    os.makedirs(imgdir, exist_ok=True)
 
     fx = intrinsic[0, 0]
     fy = intrinsic[1, 1]
@@ -720,12 +686,11 @@ def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_objects,  dst_dir
             "bbox": obj_bbox.tolist()
         }
         gt['room_objects'].append(obj_info)
-
     with open(join(dst_dir, 'info.json'), 'w') as f:
         json.dump(gt, f, indent=4)
     
     if imgs == None: # support late rendering
-        imgs = render_poses(poses)
+        imgs = render_poses(poses, imgdir)
     for i, img in enumerate(imgs):
         cv2.imwrite(join(imgdir, '{:04d}.jpg'.format(i)), img)
 
@@ -773,65 +738,96 @@ def save_in_tensorf_format(imgs, poses, room_bbox, dst_dir):
 
 if __name__ == '__main__':
 
+    """
+        Example commands:
+
+            python cli.py run ./scripts/utils.py -s 0 -r 0 --plan
+            python cli.py run ./scripts/utils.py -s 0 -r 0 --overview --gpu 3
+            python cli.py run ./scripts/utils.py -s 0 -r 0 --render -mr --gpu 3
+            python cli.py run ./scripts/utils.py -s 0 -r 0 --render -o 10 -gd 0.15 -mr --gpu 3
+
+        debug:
+            python cli.py run ./scripts/utils.py -s 0 -r 0 --render -o 0 -g 5 --gpu 3
+
+    """
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('-s', '--scene_idx', type=int, required=True)
+    parser.add_argument('-r', '--room_idx', type=int, required=True)
+    parser.add_argument('-o', '--pos_per_obj', type=int, default=10, help='Number of close-up poses for each object.')
+    parser.add_argument('-g', '--max_global_pos', type=int, default=500, help='Max number of global poses.')
+    parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses')
+    parser.add_argument('--plan', action='store_true', help='Generate the floor plan of the scene.')
+    parser.add_argument('--overview', action='store_true', help='Generate 4 corner overviews with bbox projected.')
+    parser.add_argument('--render', action='store_true', help='Render images in the scene')
+    parser.add_argument('-mr', '--make_ready', action='store_true', help='After rendering, add a suffix "ready" to dst_dir to indicate that the scene can be used. ')
+    parser.add_argument('--gpu', type=str, default='1')
+    args = parser.parse_args()
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+    dst_dir = '/data2/jhuangce/BlenderProc/FRONT3D_render/{:03d}_{}_ngp'.format(args.scene_idx, args.room_idx)
+    os.makedirs(dst_dir, exist_ok=True)
+
     construct_scene_list()
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-    render = True
-    scene_idx = 3
-    room_idx = 1
-    num_poses_global = 100 # arbitrary number
-    num_poses_per_object = 10
-    generate_corners = False
-    dst_dir = '/data2/jhuangce/BlenderProc/FRONT3D_render/{:03d}_{}_ngp'.format(scene_idx, room_idx)
 
-    # init and load objects to blenderproc
-    bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
-    loaded_objects = load_scene_objects(scene_idx)
-
-    # get poses
-    poses = []
-    room_objects = get_room_objects(scene_idx, room_idx, loaded_objects)
-    room_bbox = get_room_bbox(scene_idx, room_idx, loaded_objects)
-    poses, num_closeup, num_global = generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, 
-                                num_poses_per_object = num_poses_per_object,
-                                num_poses_global = num_poses_global
-                                )
-    if generate_corners:
-        poses.extend(generate_four_corner_poses(scene_idx, room_idx)) # last four poses for validation
-    print('Summary: {}[global] + {}[closeup] x {}[object] + {}[corner] = {} poses'.format(num_global, num_poses_per_object, len(room_objects), 4 if generate_corners else 0,len(poses)))
-    print('Estimated time: {} minutes'.format(len(poses)*25//60))
-    input('Press Enter to continue...')
-
-    # save to ngp format (with late rendering)
-    save_in_ngp_format(None, poses, K, room_bbox, room_objects, dst_dir)
-
-    # # save images
-    # for i in range(len(imgs)):
-    #     cv2.imwrite(os.path.join(RENDER_TEMP_DIR, '{}.png'.format(i)), imgs[i])
-
-
-    # get bboxes, labels, colors
-    # aabb_codes, labels, colors = [], [], []
-    # for object in room_objects:
-    #     bbox = object.get_bound_box()
-    #     aabb_codes.append(np.concatenate([np.min(bbox, axis=0), np.max(bbox, axis=0)], axis=0))
-    #     labels.append(object.get_name())
-    #     color = np.random.choice(range(256), size=3)
-    #     colors.append((int(color[0]), int(color[1]), int(color[2])))
+    if args.plan:
+        os.makedirs(os.path.join(dst_dir, 'overview'), exist_ok=True)
+        floor_plan = FloorPlan(args.scene_idx)
+        floor_plan.drawgroups_and_save(os.path.join(dst_dir, 'overview'))
     
-    # project bboxes to images
-    # imgs_projected = []
-    # for img, pose in zip(imgs, poses):
-    #     imgs_projected.append(project_bbox_to_image(img, K, np.linalg.inv(pose), aabb_codes, labels, colors))
-    
-    # save projected images
-    # for i, img in enumerate(imgs_projected):
-    #     cv2.imwrite(os.path.join(RENDER_TEMP_DIR, 'proj_{}.png'.format(i)), img)
-    
-    
-    # if render:
-    #     render_room(scene_idx=scene_idx, room_idx=room_idx, device='cuda:0')
-    # else:
-    #     floor_plan = FloorPlan(scene_idx)
-    #     floor_plan.drawsamples_and_save()
+    if args.overview and args.render:
+        print("Error: Cannot render overview and rendering at the same time. ")
+        exit()
+
+    if args.overview or args.render:
+        # init and load objects to blenderproc
+        bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
+        loaded_objects = load_scene_objects(args.scene_idx)
+        room_objects = get_room_objects(args.scene_idx, args.room_idx, loaded_objects)
+        room_bbox = get_room_bbox(args.scene_idx, args.room_idx, loaded_objects)
+
+    if args.overview:
+        overview_dir = os.path.join(dst_dir, 'overview')
+        os.makedirs(overview_dir, exist_ok=True)
+        poses = generate_four_corner_poses(args.scene_idx, args.room_idx)
+        imgs = render_poses(poses, overview_dir)
+
+        aabb_codes, labels, colors = [], [], []
+        for object in room_objects:
+            bbox = object.get_bound_box()
+            aabb_codes.append(np.concatenate([np.min(bbox, axis=0), np.max(bbox, axis=0)], axis=0))
+            labels.append(object.get_name())
+            color = np.random.choice(range(256), size=3)
+            colors.append((int(color[0]), int(color[1]), int(color[2])))
+        
+        imgs_projected = []
+        for img, pose in zip(imgs, poses):
+            imgs_projected.append(project_bbox_to_image(img, K, np.linalg.inv(pose), aabb_codes, labels, colors))
+
+        for i, img in enumerate(imgs_projected):
+            cv2.imwrite(os.path.join(os.path.join(dst_dir, 'overview'), 'proj_{}.png'.format(i)), img)
+        
+        labels.sort()
+        for label in labels:
+            print(label)
+        print(f"{len(labels)} objects in total.\n")
+
+    if args.render:
+        poses, num_closeup, num_global = generate_room_poses(args.scene_idx, args.room_idx, room_objects, room_bbox, 
+                                    num_poses_per_object = args.pos_per_obj,
+                                    max_global_pos = args.max_global_pos,
+                                    global_density=args.global_density
+                                    )
+        print('Render for scene {}, room {}:'.format(args.scene_idx, args.room_idx))
+        print('Total poses: {}[global] + {}[closeup] x {}[object] = {} poses'.format(num_global, args.pos_per_obj, len(room_objects), len(poses)))
+        print('Estimated time: {} minutes'.format(len(poses)*25//60))
+        input('Press Enter to continue...')
+
+        save_in_ngp_format(None, poses, K, room_bbox, room_objects, dst_dir) # late rendering
+
+        if args.make_ready:
+            os.rename(dst_dir, dst_dir+'_ready')
 
     print("Success.")
