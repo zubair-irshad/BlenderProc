@@ -523,7 +523,7 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
         rad_bound = [0.3, 5]
         rad_intv = global_density
         theta_bound = [0, 2*pi]
-        theta_sects = 15
+        theta_sects = 20
         theta_intv = (theta_bound[1] - theta_bound[0]) / theta_sects
         h_bound = [0.8, 2.0]
 
