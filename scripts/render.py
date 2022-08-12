@@ -19,7 +19,7 @@ from render_configs import *
 import json
 from typing import List
 from bbox_proj import project_bbox_to_image
-
+from os.path import join
 
 
 pi = np.pi
@@ -28,7 +28,7 @@ sin = np.sin
 LAYOUT_DIR = '/data2/jhuangce/3D-FRONT'
 TEXTURE_DIR = '/data2/jhuangce/3D-FRONT-texture'
 MODEL_DIR = '/data2/jhuangce/3D-FUTURE-model'
-RENDER_TEMP_DIR = '/data2/jhuangce/BlenderProc/FRONT3D_render/temp'
+RENDER_TEMP_DIR = './FRONT3D_render/temp'
 SCENE_LIST = []
 
 
@@ -38,6 +38,7 @@ def construct_scene_list():
     layout_list.sort()
     for scene_code in layout_list:
         SCENE_LIST.append(scene_code)
+    print(f"SCENE_LIST is constructed. {len(SCENE_LIST)} scenes in total")
 
 
 def check_cache_dir(scene_idx):
@@ -199,9 +200,10 @@ class FloorPlan():
         cv2.putText(self.image, 'y+', (x0+20, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, red, thickness=2)
     
     def draw_room_bbox(self):
-        for value in ROOM_CONFIG[self.scene_idx].values():
-            scene_bbox = value['bbox']
-            cv2.rectangle(self.image, self.point_to_image(scene_bbox[0]), self.point_to_image(scene_bbox[1]), color=blue, thickness=5)
+        if self.scene_idx in ROOM_CONFIG.keys():
+            for value in ROOM_CONFIG[self.scene_idx].values():
+                scene_bbox = value['bbox']
+                cv2.rectangle(self.image, self.point_to_image(scene_bbox[0]), self.point_to_image(scene_bbox[1]), color=blue, thickness=5)
     
     def draw_objects(self):
         for i in range(len(self.names)):
@@ -539,6 +541,7 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
                 rad += rad_intv
             theta += theta_intv
         positions = np.array(positions)
+        np.random.shuffle(positions)
 
         if len(positions) > max_global_pos:
             positions = positions[:max_global_pos]
@@ -604,7 +607,7 @@ def get_room_objects(scene_idx, room_idx, loaded_objects, cleanup=True):
                             flag_use=False
                 if 'fullname_ban_list' in ROOM_CONFIG[scene_idx][room_idx].keys():
                     for fullname in ROOM_CONFIG[scene_idx][room_idx]['fullname_ban_list']:
-                        if fullname == obj_name:
+                        if fullname == obj_name.strip():
                             flag_use=False
             if flag_use:
                 objects.append(object)
@@ -633,8 +636,8 @@ def render_poses(poses, temp_dir=RENDER_TEMP_DIR) -> List:
 def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_objects,  dst_dir):
     """ Save images and poses to ngp format dataset. """
     print('Save in instant-ngp format...')
-    from os.path import join
-    imgdir = join(dst_dir, 'images')
+    train_dir = join(dst_dir, 'train')
+    imgdir = join(dst_dir, 'train', 'images')
 
     if os.path.isdir(imgdir) and len(os.listdir(imgdir))>0:
         input("Warning: The existing images will be overwritten. Press enter to continue...")
@@ -647,6 +650,11 @@ def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_objects,  dst_dir
     cy = intrinsic[1, 2]
     angle_x = 2*np.arctan(cx/fx)
     angle_y = 2*np.arctan(cy/fy)
+
+    room_bbox = np.array(room_bbox)
+    scale = 1.5 / np.max(room_bbox[1] - room_bbox[0])
+    cent_after_scale = scale * (room_bbox[0] + room_bbox[1])/2.0
+    offset = np.array([0.5, 0.5, 0.5]) - cent_after_scale
 
     out = {
 			"camera_angle_x": float(angle_x),
@@ -661,36 +669,38 @@ def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_objects,  dst_dir
 			"cy": float(cy),
 			"w": int(IMG_WIDTH),
 			"h": int(IMG_HEIGHT),
-			"aabb_scale": 16,
+			"aabb_scale": 2,
+            "scale": float(scale),
+            "offset": offset.tolist(),
+            "room_bbox": room_bbox.tolist(),
+            "num_room_objects": len(room_objects),
 			"frames": [],
+            "bounding_boxes": []
 		}
+    
     for i, pose in enumerate(poses):
         frame = {
             "file_path": join('images/{:04d}.jpg'.format(i)),
             "transform_matrix": pose.tolist()
         }
         out['frames'].append(frame)
-    with open(join(dst_dir, 'transforms.json'), 'w') as f:
-        json.dump(out, f, indent=4)
     
-    gt = {
-            "room_bbox": np.array(room_bbox).tolist(),
-            "num_room_objects": len(room_objects),
-            "room_objects": []
-    }
-    for obj in room_objects:
+    for i, obj in enumerate(room_objects):
         obj_bbox_8 = obj.get_bound_box()
         obj_bbox = np.array([np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)])
-        obj_info = {
-            "label": obj.get_name(),
-            "bbox": obj_bbox.tolist()
+        obj_bbox_ngp = {
+            "extents": (obj_bbox[1]-obj_bbox[0]).tolist(),
+            "orientation": np.eye(3).tolist(),
+            "position": ((obj_bbox[0]+obj_bbox[1])/2.0).tolist(),
         }
-        gt['room_objects'].append(obj_info)
-    with open(join(dst_dir, 'info.json'), 'w') as f:
-        json.dump(gt, f, indent=4)
+        out['bounding_boxes'].append(obj_bbox_ngp)
+    
+    with open(join(train_dir, 'transforms.json'), 'w') as f:
+        json.dump(out, f, indent=4)
     
     if imgs == None: # support late rendering
         imgs = render_poses(poses, imgdir)
+    
     for i, img in enumerate(imgs):
         cv2.imwrite(join(imgdir, '{:04d}.jpg'.format(i)), img)
 
@@ -741,13 +751,13 @@ if __name__ == '__main__':
     """
         Example commands:
 
-            python cli.py run ./scripts/utils.py -s 0 -r 0 --plan
-            python cli.py run ./scripts/utils.py -s 0 -r 0 --overview --gpu 3
-            python cli.py run ./scripts/utils.py -s 0 -r 0 --render -mr --gpu 3
-            python cli.py run ./scripts/utils.py -s 0 -r 0 --render -o 10 -gd 0.15 -mr --gpu 3
+            python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --plan
+            python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --overview 
+            python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render
+            python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render -o 10 -gd 0.15
 
         debug:
-            python cli.py run ./scripts/utils.py -s 0 -r 0 --render -o 0 -g 5 --gpu 3
+            python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render -o 0 -g 5
 
     """
 
@@ -756,23 +766,26 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('-s', '--scene_idx', type=int, required=True)
     parser.add_argument('-r', '--room_idx', type=int, required=True)
-    parser.add_argument('-o', '--pos_per_obj', type=int, default=10, help='Number of close-up poses for each object.')
-    parser.add_argument('-g', '--max_global_pos', type=int, default=500, help='Max number of global poses.')
-    parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses')
     parser.add_argument('--plan', action='store_true', help='Generate the floor plan of the scene.')
     parser.add_argument('--overview', action='store_true', help='Generate 4 corner overviews with bbox projected.')
     parser.add_argument('--render', action='store_true', help='Render images in the scene')
-    parser.add_argument('-mr', '--make_ready', action='store_true', help='After rendering, add a suffix "ready" to dst_dir to indicate that the scene can be used. ')
-    parser.add_argument('--gpu', type=str, default='1')
+    parser.add_argument('-ppo', '--pos_per_obj', type=int, default=10, help='Number of close-up poses for each object.')
+    parser.add_argument('-gp', '--max_global_pos', type=int, default=500, help='Max number of global poses.')
+    parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses. Smaller global_density -> more global views')
+    # parser.add_argument('-mr', '--make_ready', action='store_true', help='After rendering, add a suffix "ready" to dst_dir to indicate that the scene can be used. ')
+    parser.add_argument('--gpu', type=str, default=1)
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-    dst_dir = '/data2/jhuangce/BlenderProc/FRONT3D_render/{:03d}_{}_ngp'.format(args.scene_idx, args.room_idx)
+    dst_dir = '/data2/jhuangce/BlenderProc/FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
     os.makedirs(dst_dir, exist_ok=True)
+    print(dst_dir)
 
     construct_scene_list()
 
     if args.plan:
+        if args.scene_idx == -1 or args.scene_idx > 6812:
+            raise ValueError("%d is not a valid scene_idx. Should provide a scene_idx between 0 and 6812 inclusively")
         os.makedirs(os.path.join(dst_dir, 'overview'), exist_ok=True)
         floor_plan = FloorPlan(args.scene_idx)
         floor_plan.drawgroups_and_save(os.path.join(dst_dir, 'overview'))
@@ -826,8 +839,5 @@ if __name__ == '__main__':
         input('Press Enter to continue...')
 
         save_in_ngp_format(None, poses, K, room_bbox, room_objects, dst_dir) # late rendering
-
-        if args.make_ready:
-            os.rename(dst_dir, dst_dir+'_ready')
 
     print("Success.")

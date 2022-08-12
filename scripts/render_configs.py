@@ -20,13 +20,14 @@ OBJ_BAN_LIST = ['Baseboard', 'Pocket', 'Floor', 'SlabSide.', 'WallInner', 'Front
                 'WallTop', 'WallBottom', 'Ceiling.', 'FeatureWall', 'LightBand']
 
 """
+<room config template>
+
 0: {'bbox': [[-4.9, -0.7], [-0.7, 3]], 
                         'keyword_ban_list': [],
                         'fullname_ban_list': []
                         }
 
 """
-
 ROOM_CONFIG = { 0: {0: {'bbox': [[-3.5, -3.9], [-0.8, -1]], 
                         },
                     1: {'bbox': [[0.5, -2.2], [4.3, 0.9]], 
@@ -53,5 +54,28 @@ ROOM_CONFIG = { 0: {0: {'bbox': [[-3.5, -3.9], [-0.8, -1]],
                         'keyword_ban_list': [],
                         'fullname_ban_list': []
                         },
-                    }}
+                    },
+                5: {0: {'bbox': [[0.6, -2.2], [4.3, 0.8]], 
+                        'keyword_ban_list': [],
+                        'fullname_ban_list': ['bed', 'bed.002','bed.003', 'bed.005', 'bed.006', 'bed.007','lighting.003']
+                        },
+                    1: {'bbox': [[-3.5, -4], [-0.8, -0.9]], 
+                        'keyword_ban_list': [],
+                        'fullname_ban_list': ['lighting.002']
+                        },
+                    2: {'bbox': [[1.1, -5.6], [5.9, -2.2]], 
+                        'keyword_ban_list': [],
+                        'fullname_ban_list': []
+                        }
+                    },
+                6: {0: {'bbox': [[-6.1, -4.5], [-1.2, 2.1]], 
+                        'keyword_ban_list': [],
+                        'fullname_ban_list': []
+                        }
+                    },
+                25:{0: {'bbox': [[0.2, -3.1], [3.6, -0.2]], 
+                        'keyword_ban_list': [],
+                        'fullname_ban_list': []
+                        }}
+                }   
 
