@@ -22,7 +22,7 @@
    ```
    Then, you can find the floor plan of scene 25 at  `FRONT3D_render/3dfront_0025_00/overview/floor_plan.jpg`
 2. Configure a room in the scene. \
-   Room configuration should be done on `ROOM_CONFIG` in `scripts/render_config.py` \
+   Room configuration should be done in `scripts/room_config.yml` \
    The first level key of `ROOM_CONFIG` is the scene index, the second level key is the room index. You can create any number of rooms under one scene. For now, only fill the `bbox` in format `[[xmin, ymin], [xmax, ymax]]`, and leave `keyword_ban_list` and `fullname_ban_list` as empty list. Carefully refer to the floor plan that you generated to determine the bounding box of each room. \
    After defining `bbox` for a room, you can generate the floor plan image again to see whether the bounding box of the room is actually what you expected. 
    

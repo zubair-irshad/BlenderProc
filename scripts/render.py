@@ -773,7 +773,7 @@ if __name__ == '__main__':
     parser.add_argument('-gp', '--max_global_pos', type=int, default=500, help='Max number of global poses.')
     parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses. Smaller global_density -> more global views')
     # parser.add_argument('-mr', '--make_ready', action='store_true', help='After rendering, add a suffix "ready" to dst_dir to indicate that the scene can be used. ')
-    parser.add_argument('--gpu', type=str, default=1)
+    parser.add_argument('--gpu', type=str, default="1")
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
