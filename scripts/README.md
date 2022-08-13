@@ -33,9 +33,10 @@
    ```
    After rendering, you can find the overview images in `FRONT3D_render/3dfront_0025_00/overview/`
    - If the room is open connected to another room (for example a living room can be connected to another living room without a wall in between, even though they look like two seperate rooms in the floor plan image), then don't use it.
-   - If the room is valid, then carefully ban those unecessary objects in the scene by updating `keyword_ban_list` and `fullname_ban_list`. 
+   - If the room is valid, then carefully ban those unecessary objects in the scene by updating `keyword_ban_list` and `fullname_ban_list`. You can also merge several bboxes into one large bbox by adding a list into `merge_list`. 
      - If an object label **contains any item** in the `keyword_ban_list`, the object bounding box will not be used. 
      - If an object label **appears** in the `fullname_ban_list`, the object bounding box will not be used. \
+     - Any bounding box list in `merge_list` will be merged into one bounding box. 
    Only keep those large objects. (Usually there will be <10 large objects in a single room. ) Render the overview images again to make sure only those desired bounding boxes appear.
 
 4. Render the room. \

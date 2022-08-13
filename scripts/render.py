@@ -20,6 +20,7 @@ import json
 from typing import List
 from bbox_proj import project_bbox_to_image
 from os.path import join
+import glob
 
 
 pi = np.pi
@@ -118,13 +119,44 @@ def get_cameras_in_oval_trajectory(scene_idx, room_idx = None):
     # print(rotations) debug
     return locations, rotations
 
+def get_scene_bbox_meta(scene_idx, overwrite=False):
+    """ Get the bounding box meta data of a scene. 
+        [(name1, [[xmin, ymin, zmin], [xmax, ymax, zmax]]), (name2, [[xmin, ymin, zmin], [xmax, ymax, zmax]]), ...]
+    """
+    check_cache_dir(scene_idx)
+    if os.path.isfile('./cached/%d/names.npy' % scene_idx) and overwrite==False:
+        print(f'Found cached information for scene {scene_idx}.')
+        names = np.load(f'./cached/{scene_idx}/names.npy')
+        bbox_mins = np.load(f'./cached/{scene_idx}/bbox_mins.npy')
+        bbox_maxs = np.load(f'./cached/{scene_idx}/bbox_maxs.npy')
+    else:
+        loaded_objects = load_scene_objects(scene_idx, overwrite)
+        names = []
+        bbox_mins = []
+        bbox_maxs = []
+        for i in range(len(loaded_objects)):
+            object = loaded_objects[i]
+            name = object.get_name()
+            bbox = object.get_bound_box()
+            bbox_min = np.min(bbox, axis=0)
+            bbox_max = np.max(bbox, axis=0)
+            names.append(name)
+            bbox_mins.append(bbox_min)
+            bbox_maxs.append(bbox_max)
+
+        np.save(f'./cached/{scene_idx}/names.npy', names)
+        np.save(f'./cached/{scene_idx}/bbox_mins.npy', bbox_mins)
+        np.save(f'./cached/{scene_idx}/bbox_maxs.npy', bbox_maxs)
+
+    return names, bbox_mins, bbox_maxs
+
 red = (0,0,255)
 green = (0,255,0)
 blue = (255,0,0)
 class FloorPlan():
     def __init__(self, scene_idx):
         self.scene_idx = scene_idx
-        self.names, self.bbox_mins, self.bbox_maxs = self.get_scene_information(scene_idx)
+        self.names, self.bbox_mins, self.bbox_maxs = get_scene_bbox_meta(scene_idx)
 
         self.scene_min = np.min(self.bbox_mins, axis=0)
         self.scene_max = np.max(self.bbox_maxs, axis=0)
@@ -138,34 +170,6 @@ class FloorPlan():
         self.height = int((self.scene_max-self.scene_min)[1]*self.scale)+self.margin*2
 
         self.image = np.ones((self.height,self.width,3), np.uint8)
-    
-    def get_scene_information(self, scene_idx, overwrite=False):
-        check_cache_dir(scene_idx)
-        if os.path.isfile('./cached/%d/names.npy' % scene_idx) and overwrite==False:
-            print(f'Found cached information for scene {scene_idx}.')
-            names = np.load(f'./cached/{scene_idx}/names.npy')
-            bbox_mins = np.load(f'./cached/{scene_idx}/bbox_mins.npy')
-            bbox_maxs = np.load(f'./cached/{scene_idx}/bbox_maxs.npy')
-        else:
-            loaded_objects = load_scene_objects(scene_idx, overwrite)
-            names = []
-            bbox_mins = []
-            bbox_maxs = []
-            for i in range(len(loaded_objects)):
-                object = loaded_objects[i]
-                name = object.get_name()
-                bbox = object.get_bound_box()
-                bbox_min = np.min(bbox, axis=0)
-                bbox_max = np.max(bbox, axis=0)
-                names.append(name)
-                bbox_mins.append(bbox_min)
-                bbox_maxs.append(bbox_max)
-
-            np.save(f'./cached/{scene_idx}/names.npy', names)
-            np.save(f'./cached/{scene_idx}/bbox_mins.npy', bbox_mins)
-            np.save(f'./cached/{scene_idx}/bbox_maxs.npy', bbox_maxs)
-
-        return names, bbox_mins, bbox_maxs
     
     def draw_samples(self, locs=None, rots=None):
         if locs == None:
@@ -443,14 +447,13 @@ def generate_four_corner_poses(scene_idx, room_idx):
     
     return c2ws
 
-def check_pos_valid(pos, room_objects, room_bbox):
+def check_pos_valid(pos, room_bbox_meta, room_bbox):
     """ Check if the position is in the room, not too close to walls and not conflicting with other objects. """
     room_bbox_small = [[item+0.5 for item in room_bbox[0]], [room_bbox[1][0]-0.5, room_bbox[1][1]-0.5, room_bbox[1][2]-0.8]] # ceiling is lower
     if not pos_in_bbox(pos, room_bbox_small):
         return False
-    for obj in room_objects:
-        obj_bbox_8 = obj.get_bound_box()
-        obj_bbox = [np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)]
+    for obj in room_bbox_meta:
+        obj_bbox = obj[1]
         if pos_in_bbox(pos, obj_bbox):
             return False
 
@@ -468,7 +471,7 @@ def plot_3d_point_cloud(data):
     ax.scatter(x, y, z)
     plt.savefig('./test.png')
 
-def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_per_object, max_global_pos, global_density):
+def generate_room_poses(scene_idx, room_idx, room_bbox_meta, room_bbox, num_poses_per_object, max_global_pos, global_density):
     pass
     """ Return a list of poses including global poses and close-up poses for each object."""
 
@@ -478,10 +481,9 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
 
     # close-up poses for each object.
     if num_poses_per_object>0:
-        for obj in room_objects:
-            obj_bbox_8 = obj.get_bound_box()
-            obj_bbox = [np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)]
-            cent = np.mean(obj_bbox_8, axis=0)
+        for obj in room_bbox_meta:
+            obj_bbox = np.array(obj[1])
+            cent = np.mean(obj_bbox, axis=0)
             rad = np.linalg.norm(obj_bbox[1]-obj_bbox[0])/2 * 1.7 # how close the camera is to the object
             if np.max(obj_bbox[1]-obj_bbox[0])<1:
                 rad *= 1.2 # handle small objects
@@ -506,7 +508,7 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
             positions = np.array(positions)
             positions = positions * rad + cent
 
-            positions = [pos for pos in positions if check_pos_valid(pos, room_objects, room_bbox)]
+            positions = [pos for pos in positions if check_pos_valid(pos, room_bbox_meta, room_bbox)]
             shuffle(positions)
             if len(positions) > num_poses_per_object:
                 positions = positions[:num_poses_per_object]
@@ -536,7 +538,7 @@ def generate_room_poses(scene_idx, room_idx, room_objects, room_bbox, num_poses_
             while rad < rad_bound[1]:
                 h = np.random.uniform(h_bound[0], h_bound[1])
                 pos = [rm_cent[0] + rad * cos(theta), rm_cent[1] + rad * sin(theta), h]
-                if check_pos_valid(pos, room_objects, room_bbox):
+                if check_pos_valid(pos, room_bbox_meta, room_bbox):
                     positions.append(pos)
                 rad += rad_intv
             theta += theta_intv
@@ -614,6 +616,22 @@ def get_room_objects(scene_idx, room_idx, loaded_objects, cleanup=True):
 
     return objects
 
+def merge_bbox(scene_idx, room_idx, room_bbox_meta):
+    """ Merge the bounding box of the room. """
+    if 'merge_list' in ROOM_CONFIG[scene_idx][room_idx]:
+        merge_list = ROOM_CONFIG[scene_idx][room_idx]['merge_list']
+        for i, merge_items in enumerate(merge_list):
+            result_room_bbox_meta, merge_mins, merge_maxs = [], [], []
+            for obj in room_bbox_meta:
+                if obj[0] in merge_items:
+                    merge_mins.append(obj[1][0])
+                    merge_maxs.append(obj[1][1])
+                else:
+                    result_room_bbox_meta.append(obj)
+            if len(merge_mins) > 0:
+                result_room_bbox_meta.append((f"merge{i+1:02d}", [np.min(np.array(merge_mins), axis=0), np.max(np.array(merge_maxs), axis=0)]))
+            room_bbox_meta = result_room_bbox_meta
+    return room_bbox_meta
 
 def render_poses(poses, temp_dir=RENDER_TEMP_DIR) -> List:
     """ Render a scene with a list of poses. 
@@ -633,7 +651,7 @@ def render_poses(poses, temp_dir=RENDER_TEMP_DIR) -> List:
 
 ##################################### save to dataset #####################################
 
-def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_objects,  dst_dir):
+def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_bbox_meta, dst_dir):
     """ Save images and poses to ngp format dataset. """
     print('Save in instant-ngp format...')
     train_dir = join(dst_dir, 'train')
@@ -673,7 +691,7 @@ def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_objects,  dst_dir
             "scale": float(scale),
             "offset": offset.tolist(),
             "room_bbox": room_bbox.tolist(),
-            "num_room_objects": len(room_objects),
+            "num_room_objects": len(room_bbox_meta),
 			"frames": [],
             "bounding_boxes": []
 		}
@@ -685,9 +703,8 @@ def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_objects,  dst_dir
         }
         out['frames'].append(frame)
     
-    for i, obj in enumerate(room_objects):
-        obj_bbox_8 = obj.get_bound_box()
-        obj_bbox = np.array([np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)])
+    for i, obj in enumerate(room_bbox_meta):
+        obj_bbox = np.array(obj[1])
         obj_bbox_ngp = {
             "extents": (obj_bbox[1]-obj_bbox[0]).tolist(),
             "orientation": np.eye(3).tolist(),
@@ -793,25 +810,42 @@ if __name__ == '__main__':
     if args.overview and args.render:
         print("Error: Cannot render overview and rendering at the same time. ")
         exit()
-
+    # TODO: implement bbox_meta
     if args.overview or args.render:
         # init and load objects to blenderproc
         bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
         loaded_objects = load_scene_objects(args.scene_idx)
         room_objects = get_room_objects(args.scene_idx, args.room_idx, loaded_objects)
         room_bbox = get_room_bbox(args.scene_idx, args.room_idx, loaded_objects)
+        room_bbox_meta = []
+        for obj in room_objects:
+            obj_bbox_8 = obj.get_bound_box()
+            obj_bbox = np.array([np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)])
+            room_bbox_meta.append((obj.get_name(), obj_bbox))
+        room_bbox_meta = merge_bbox(args.scene_idx, args.room_idx, room_bbox_meta)
 
     if args.overview:
         overview_dir = os.path.join(dst_dir, 'overview')
         os.makedirs(overview_dir, exist_ok=True)
         poses = generate_four_corner_poses(args.scene_idx, args.room_idx)
-        imgs = render_poses(poses, overview_dir)
+
+        cache_dir = join(dst_dir, 'overview/raw')
+        cached_img_paths = glob.glob(cache_dir)
+        imgs = []
+        if len(cached_img_paths) > 0 and True:
+            for img_path in sorted(cached_img_paths):
+                imgs.append(cv2.imread(img_path))
+        else:
+            imgs = render_poses(poses, overview_dir)
+            os.makedirs(cache_dir, exist_ok=True)
+            for i, img in enumerate(imgs):
+                cv2.imwrite(join(cache_dir, f'raw_{i}.jpg'), img)
 
         aabb_codes, labels, colors = [], [], []
-        for object in room_objects:
-            bbox = object.get_bound_box()
-            aabb_codes.append(np.concatenate([np.min(bbox, axis=0), np.max(bbox, axis=0)], axis=0))
-            labels.append(object.get_name())
+        for obj in room_bbox_meta:
+            obj_bbox = obj[1]
+            aabb_codes.append(np.concatenate([obj_bbox[0], obj_bbox[1]], axis=0))
+            labels.append(obj[0])
             color = np.random.choice(range(256), size=3)
             colors.append((int(color[0]), int(color[1]), int(color[2])))
         
@@ -828,16 +862,18 @@ if __name__ == '__main__':
         print(f"{len(labels)} objects in total.\n")
 
     if args.render:
-        poses, num_closeup, num_global = generate_room_poses(args.scene_idx, args.room_idx, room_objects, room_bbox, 
+        poses, num_closeup, num_global = generate_room_poses(args.scene_idx, args.room_idx, room_bbox_meta, room_bbox, 
                                     num_poses_per_object = args.pos_per_obj,
                                     max_global_pos = args.max_global_pos,
                                     global_density=args.global_density
                                     )
         print('Render for scene {}, room {}:'.format(args.scene_idx, args.room_idx))
-        print('Total poses: {}[global] + {}[closeup] x {}[object] = {} poses'.format(num_global, args.pos_per_obj, len(room_objects), len(poses)))
+        for obj in room_bbox_meta:
+            print(f"\t{obj[1]}")
+        print('Total poses: {}[global] + {}[closeup] x {}[object] = {} poses'.format(num_global, args.pos_per_obj, len(room_bbox_meta), len(poses)))
         print('Estimated time: {} minutes'.format(len(poses)*25//60))
         input('Press Enter to continue...')
 
-        save_in_ngp_format(None, poses, K, room_bbox, room_objects, dst_dir) # late rendering
+        save_in_ngp_format(None, poses, K, room_bbox, room_bbox_meta, dst_dir) # late rendering
 
     print("Success.")

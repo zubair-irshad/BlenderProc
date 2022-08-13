@@ -3,7 +3,6 @@
 #     bbox: [[xmin, xmax], [ymin, ymax]]
 #     keyword_ban_list: [...]
 #     fullname_ban_list: [...]
-  
 #   ...
 
 0:
@@ -64,3 +63,18 @@
     bbox: [[-5.1, -9.4], [-1.6, -6]]
     keyword_ban_list: []
     fullname_ban_list: []
+  1:
+    bbox: [[2.8, -3.2], [6.9, 1.3]]
+    keyword_ban_list: []
+    fullname_ban_list: []
+  2:
+    bbox: [[-5.1, -4], [-0.8, 1.3]]
+    keyword_ban_list: []
+    fullname_ban_list: [table.005, table.008]
+    merge_list: [[table.001, table.002]]
+10:
+  0:
+    bbox: [[1.7, -18.4], [6.0, -14.2]]
+    keyword_ban_list: [ExtrusionCustomized]
+    fullname_ban_list: [table.005, table.008, Hole.002]
+    merge_list: [[table.004, table.007]]
