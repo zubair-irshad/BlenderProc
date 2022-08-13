@@ -619,8 +619,8 @@ def get_room_objects(scene_idx, room_idx, loaded_objects, cleanup=True):
 def merge_bbox(scene_idx, room_idx, room_bbox_meta):
     """ Merge the bounding box of the room. """
     if 'merge_list' in ROOM_CONFIG[scene_idx][room_idx]:
-        merge_list = ROOM_CONFIG[scene_idx][room_idx]['merge_list']
-        for i, merge_items in enumerate(merge_list):
+        merge_dict = ROOM_CONFIG[scene_idx][room_idx]['merge_list']
+        for label, merge_items in merge_dict.items():
             result_room_bbox_meta, merge_mins, merge_maxs = [], [], []
             for obj in room_bbox_meta:
                 if obj[0] in merge_items:
@@ -629,7 +629,7 @@ def merge_bbox(scene_idx, room_idx, room_bbox_meta):
                 else:
                     result_room_bbox_meta.append(obj)
             if len(merge_mins) > 0:
-                result_room_bbox_meta.append((f"merge{i+1:02d}", [np.min(np.array(merge_mins), axis=0), np.max(np.array(merge_maxs), axis=0)]))
+                result_room_bbox_meta.append((label, [np.min(np.array(merge_mins), axis=0), np.max(np.array(merge_maxs), axis=0)]))
             room_bbox_meta = result_room_bbox_meta
     return room_bbox_meta
 
@@ -789,6 +789,7 @@ if __name__ == '__main__':
     parser.add_argument('-ppo', '--pos_per_obj', type=int, default=10, help='Number of close-up poses for each object.')
     parser.add_argument('-gp', '--max_global_pos', type=int, default=500, help='Max number of global poses.')
     parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses. Smaller global_density -> more global views')
+    parser.add_argument('-nc', '--no_check', action='store_true', default=False, help='Do not the poses. Render directly.')
     # parser.add_argument('-mr', '--make_ready', action='store_true', help='After rendering, add a suffix "ready" to dst_dir to indicate that the scene can be used. ')
     parser.add_argument('--gpu', type=str, default="1")
     args = parser.parse_args()
@@ -830,7 +831,7 @@ if __name__ == '__main__':
         poses = generate_four_corner_poses(args.scene_idx, args.room_idx)
 
         cache_dir = join(dst_dir, 'overview/raw')
-        cached_img_paths = glob.glob(cache_dir)
+        cached_img_paths = glob.glob(cache_dir+'/*')
         imgs = []
         if len(cached_img_paths) > 0 and True:
             for img_path in sorted(cached_img_paths):
@@ -867,12 +868,13 @@ if __name__ == '__main__':
                                     max_global_pos = args.max_global_pos,
                                     global_density=args.global_density
                                     )
-        print('Render for scene {}, room {}:'.format(args.scene_idx, args.room_idx))
-        for obj in room_bbox_meta:
-            print(f"\t{obj[1]}")
-        print('Total poses: {}[global] + {}[closeup] x {}[object] = {} poses'.format(num_global, args.pos_per_obj, len(room_bbox_meta), len(poses)))
-        print('Estimated time: {} minutes'.format(len(poses)*25//60))
-        input('Press Enter to continue...')
+        if not args.no_check:
+            print('Render for scene {}, room {}:'.format(args.scene_idx, args.room_idx))
+            for obj in room_bbox_meta:
+                print(f"\t{obj[1]}")
+            print('Total poses: {}[global] + {}[closeup] x {}[object] = {} poses'.format(num_global, args.pos_per_obj, len(room_bbox_meta), len(poses)))
+            print('Estimated time: {} minutes'.format(len(poses)*25//60))
+            input('Press Enter to continue...')
 
         save_in_ngp_format(None, poses, K, room_bbox, room_bbox_meta, dst_dir) # late rendering
 
