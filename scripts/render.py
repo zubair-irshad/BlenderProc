@@ -35,8 +35,9 @@ SCENE_LIST = []
 
 def construct_scene_list():
     """ Construct a list of scenes and save to SCENE_LIST global variable. """
-    SCENE_LIST = [join(LAYOUT_DIR, name) for name in os.listdir(LAYOUT_DIR)]
-    SCENE_LIST.sort()
+    scene_list = sorted([join(LAYOUT_DIR, name) for name in os.listdir(LAYOUT_DIR)])
+    for scene_path in scene_list:
+        SCENE_LIST.append(scene_path)
     print(f"SCENE_LIST is constructed. {len(SCENE_LIST)} scenes in total")
 
 
@@ -784,6 +785,8 @@ if __name__ == '__main__':
     print(dst_dir)
 
     construct_scene_list()
+    print(len(SCENE_LIST))
+    exit
 
     if args.plan:
         if args.scene_idx == -1 or args.scene_idx > 6812:
