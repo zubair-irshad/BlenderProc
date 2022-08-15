@@ -126,3 +126,58 @@
     keyword_ban_list: [Beam]
     merge_list:
       storage unit: [storage unit.001, sofa.001, cabinet.003]
+  1:
+    bbox: [[0.4, 0], [5.5, 4.2]]
+    merge_list:
+      lighting: [lighting, lighting.005, lighting.006, lighting.007, lighting.008]
+      table: [table, table.001]
+19:
+  0:
+    bbox: [[-0.85, 2.1], [2.9, 6]]
+20:
+  0:
+    bbox: [[-2.2, -4.3], [1.3, 0.8]]
+    merge_list:
+      sofa.001: [sofa.008, sofa.009, sofa.010, sofa.011, sofa.012, sofa.013, sofa.014]
+      sofa.002: [sofa, sofa.002, sofa.003, sofa.004, sofa.005,sofa.006, sofa.007]
+22:
+  0:
+    bbox: [[-5.9, -2], [-2.5, 2.2]]
+    fullname_ban_list: [others.010, others.013]
+    merge_list:
+      bed: [others.003, others.004, others.005, others.006, others.007, others.008]
+      lighting: [others.009, others.011]
+  1:
+    bbox: [[0.2, -3.5], [3.9, 2.1]]
+    fullname_ban_list: [others.015, others.020, others]
+23:
+  0:
+    bbox: [[-3.4, 1.5], [0.1, 5.75]]
+    fullname_ban_list: [others.014]
+    merge_list:
+      bed: [others.006, others.007, others.008, others.009, others.010, others.011, others.012]
+  1:
+    bbox: [[0.1, 2], [4.1, 7]]
+    fullname_ban_list: [others.046]
+    merge_list:
+      lighting: [others.044, others.045]
+      desk: [others.036, others.037, others.038]
+      accessory: [others.039, others.040, others.041, others.042, others.043]
+      sofa: [others.022, others.023, others.024, others.025, others.026, others.027, others.028, others.029]
+      table: [others.032, others.033, others.034, others.035]
+24:
+  0:
+    bbox: [[0.7, -6.5], [3.9, -2.2]]
+    merge_list:
+      lighting: [lighting.001, lighting.002, lighting.003, lighting.004, lighting.008]
+  1:
+    bbox: [[-3.9, 3.2], [0.7, 7.5]]
+    fullname_ban_list: [lighting.020, lighting.022, lighting.025, lighting.026]
+    merge_list:
+      lighting: [lighting, lighting.019, lighting.021, lighting.023, lighting.024, lighting.027]
+25:
+  0:
+    bbox: [[-3, -3], [0.2, 1.8]]
+    merge_list:
+      furniture.001: [CustomizedFurniture.001, CustomizedFurniture.002, CustomizedFurniture.003]
+      furniture.002: [CustomizedFurniture.004, CustomizedFurniture.005, CustomizedFurniture.006]
