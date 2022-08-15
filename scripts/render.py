@@ -756,11 +756,10 @@ if __name__ == '__main__':
             python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --plan
             python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --overview 
             python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render
-            python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render -o 10 -gd 0.15
-
-        debug:
-            python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render -o 0 -g 5
-
+            python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render -ppo 10 -gd 0.15
+            python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render -ppo 0 -gp 5
+            python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render -nc
+        
     """
 
     import argparse
@@ -775,32 +774,26 @@ if __name__ == '__main__':
     parser.add_argument('-gp', '--max_global_pos', type=int, default=500, help='Max number of global poses.')
     parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses. Smaller global_density -> more global views')
     parser.add_argument('-nc', '--no_check', action='store_true', default=False, help='Do not the poses. Render directly.')
-    # parser.add_argument('-mr', '--make_ready', action='store_true', help='After rendering, add a suffix "ready" to dst_dir to indicate that the scene can be used. ')
     parser.add_argument('--gpu', type=str, default="1")
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     dst_dir = '/data2/jhuangce/BlenderProc/FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
     os.makedirs(dst_dir, exist_ok=True)
-    print(dst_dir)
 
     construct_scene_list()
-    print(len(SCENE_LIST))
-    exit
 
     if args.plan:
-        if args.scene_idx == -1 or args.scene_idx > 6812:
+        if args.scene_idx < 0 or args.scene_idx > 6812:
             raise ValueError("%d is not a valid scene_idx. Should provide a scene_idx between 0 and 6812 inclusively")
         os.makedirs(os.path.join(dst_dir, 'overview'), exist_ok=True)
         floor_plan = FloorPlan(args.scene_idx)
         floor_plan.drawgroups_and_save(os.path.join(dst_dir, 'overview'))
     
     if args.overview and args.render:
-        print("Error: Cannot render overview and rendering at the same time. ")
-        exit()
+        raise ValueError("Error: Cannot render overview and rendering at the same time. ")
 
     if args.overview or args.render:
-        
         cache_dir = f'./cached/{args.scene_idx}'
         if args.overview and os.path.isfile(cache_dir + '/names.npy') and len(glob.glob(join(dst_dir, 'overview/raw/*'))) > 0:
             names = np.load(cache_dir + '/names.npy')
@@ -811,7 +804,6 @@ if __name__ == '__main__':
             for i in range(len(names)):
                 if bbox_contained([bbox_mins[i], bbox_maxs[i]], room_bbox):
                     room_bbox_meta.append((names[i], [bbox_mins[i], bbox_maxs[i]]))
-        
         else: # init and load objects to blenderproc
             bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
             loaded_objects = load_scene_objects(args.scene_idx)
@@ -824,6 +816,10 @@ if __name__ == '__main__':
                 room_bbox_meta.append((obj.get_name(), obj_bbox))
             
         # clean up: TODO: move to a separate function
+        # Steps:
+        #   1. merge
+        #   2. check keyword_ban_list
+        #   3. check fullname_ban_list
         room_bbox_meta = merge_bbox(args.scene_idx, args.room_idx, room_bbox_meta)
         result_room_bbox_meta = []
         for bbox_meta in room_bbox_meta:
