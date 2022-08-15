@@ -35,10 +35,8 @@ SCENE_LIST = []
 
 def construct_scene_list():
     """ Construct a list of scenes and save to SCENE_LIST global variable. """
-    layout_list = [join(LAYOUT_DIR, name) for name in os.listdir(LAYOUT_DIR)]
-    layout_list.sort()
-    for scene_code in layout_list:
-        SCENE_LIST.append(scene_code)
+    SCENE_LIST = [join(LAYOUT_DIR, name) for name in os.listdir(LAYOUT_DIR)]
+    SCENE_LIST.sort()
     print(f"SCENE_LIST is constructed. {len(SCENE_LIST)} scenes in total")
 
 
@@ -78,9 +76,9 @@ def load_scene_objects(scene_idx, overwrite=False):
     for obj in loaded_objects:
         name = obj.get_name()
         if 'wall' in name.lower():
-            add_texture(obj, "/data2/jhuangce/3D-FRONT-texture/1b57700d-f41b-4ac7-a31a-870544c3d608/texture.png")
+            add_texture(obj, TEXTURE_DIR+"/1b57700d-f41b-4ac7-a31a-870544c3d608/texture.png")
         elif 'floor' in name.lower():
-            add_texture(obj, "/data2/jhuangce/3D-FRONT-texture/0b48b46d-4f0b-418d-bde6-30ca302288e6/texture.png")
+            add_texture(obj, TEXTURE_DIR+"/0b48b46d-4f0b-418d-bde6-30ca302288e6/texture.png")
         # elif 'ceil' in name.lower():
         #     add_texture(obj, "/data2/jhuangce/3D-FRONT-texture/0a5adcc7-f17f-488f-9f95-8690cbc31321/texture.png")
 
@@ -558,24 +556,25 @@ def generate_room_poses(scene_idx, room_idx, room_bbox_meta, room_bbox, num_pose
 
 #################################################################################
 
-def get_scene_bbox(loaded_objects):
+def get_scene_bbox(loaded_objects=None, scene_bbox_meta=None):
     """ Return the bounding box of the scene. """
+    
     bbox_mins = []
     bbox_maxs = []
-    for i in range(len(loaded_objects)):
-        object = loaded_objects[i]
-        bbox = object.get_bound_box()
-        bbox_min = np.min(bbox, axis=0)
-        bbox_max = np.max(bbox, axis=0)
-        bbox_mins.append(bbox_min)
-        bbox_maxs.append(bbox_max)
+    if loaded_objects!=None:
+        for i, object in enumerate(loaded_objects):
+            bbox = object.get_bound_box()
+            bbox_mins.append(np.min(bbox, axis=0))
+            bbox_maxs.append(np.max(bbox, axis=0))
+    elif scene_bbox_meta!=None:
+        _, bbox_mins, bbox_maxs = scene_bbox_meta
     scene_min = np.min(bbox_mins, axis=0)
     scene_max = np.max(bbox_maxs, axis=0)
     return scene_min, scene_max
 
-def get_room_bbox(scene_idx, room_idx, loaded_objects):
+def get_room_bbox(scene_idx, room_idx, loaded_objects=None, scene_bbox_meta=None):
     """ Return the bounding box of the room. """
-    scene_min, scene_max = get_scene_bbox(loaded_objects)
+    scene_min, scene_max = get_scene_bbox(loaded_objects, scene_bbox_meta)
     room_config = ROOM_CONFIG[scene_idx][room_idx]
     scene_min[:2] = room_config['bbox'][0]
     scene_max[:2] = room_config['bbox'][1]
@@ -587,32 +586,17 @@ def bbox_contained(bbox_a, bbox_b):
     return bbox_a[0][0]>=bbox_b[0][0] and bbox_a[0][1]>=bbox_b[0][1] and bbox_a[0][2]>=bbox_b[0][2] and \
            bbox_a[1][0]<=bbox_b[1][0] and bbox_a[1][1]<=bbox_b[1][1] and bbox_a[1][2]<=bbox_b[1][2]
 
-def get_room_objects(scene_idx, room_idx, loaded_objects, cleanup=True):
+def get_room_objects(scene_idx, room_idx, loaded_objects, cleanup=False):
     """ Return the objects within the room bbox. Cleanup unecessary objects. """
     objects = []
 
-    room_bbox = get_room_bbox(scene_idx, room_idx, loaded_objects)
+    room_bbox = get_room_bbox(scene_idx, room_idx, loaded_objects=loaded_objects)
     # print(room_bbox) #debug
     for object in loaded_objects:
         obj_bbox_8 = object.get_bound_box()
         obj_bbox = [np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)]
         if bbox_contained(obj_bbox, room_bbox):
-            flag_use = True
-            if cleanup:
-                obj_name = object.get_name()
-                for ban_word in OBJ_BAN_LIST:
-                    if ban_word in obj_name:
-                        flag_use=False
-                if 'keyword_ban_list' in ROOM_CONFIG[scene_idx][room_idx].keys():
-                    for ban_word in ROOM_CONFIG[scene_idx][room_idx]['keyword_ban_list']:
-                        if ban_word in obj_name:
-                            flag_use=False
-                if 'fullname_ban_list' in ROOM_CONFIG[scene_idx][room_idx].keys():
-                    for fullname in ROOM_CONFIG[scene_idx][room_idx]['fullname_ban_list']:
-                        if fullname == obj_name.strip():
-                            flag_use=False
-            if flag_use:
-                objects.append(object)
+            objects.append(object)
 
     return objects
 
@@ -811,19 +795,51 @@ if __name__ == '__main__':
     if args.overview and args.render:
         print("Error: Cannot render overview and rendering at the same time. ")
         exit()
-    # TODO: implement bbox_meta
+
     if args.overview or args.render:
-        # init and load objects to blenderproc
-        bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
-        loaded_objects = load_scene_objects(args.scene_idx)
-        room_objects = get_room_objects(args.scene_idx, args.room_idx, loaded_objects)
-        room_bbox = get_room_bbox(args.scene_idx, args.room_idx, loaded_objects)
-        room_bbox_meta = []
-        for obj in room_objects:
-            obj_bbox_8 = obj.get_bound_box()
-            obj_bbox = np.array([np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)])
-            room_bbox_meta.append((obj.get_name(), obj_bbox))
+        
+        cache_dir = f'./cached/{args.scene_idx}'
+        if args.overview and os.path.isfile(cache_dir + '/names.npy') and len(glob.glob(join(dst_dir, 'overview/raw/*'))) > 0:
+            names = np.load(cache_dir + '/names.npy')
+            bbox_maxs = np.load(cache_dir + '/bbox_maxs.npy')
+            bbox_mins = np.load(cache_dir + '/bbox_mins.npy')
+            room_bbox = get_room_bbox(args.scene_idx, args.room_idx, scene_bbox_meta=[names, bbox_mins, bbox_maxs])
+            room_bbox_meta = []
+            for i in range(len(names)):
+                if bbox_contained([bbox_mins[i], bbox_maxs[i]], room_bbox):
+                    room_bbox_meta.append((names[i], [bbox_mins[i], bbox_maxs[i]]))
+        
+        else: # init and load objects to blenderproc
+            bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
+            loaded_objects = load_scene_objects(args.scene_idx)
+            room_objects = get_room_objects(args.scene_idx, args.room_idx, loaded_objects)
+            room_bbox = get_room_bbox(args.scene_idx, args.room_idx, loaded_objects=loaded_objects)
+            room_bbox_meta = []
+            for obj in room_objects:
+                obj_bbox_8 = obj.get_bound_box()
+                obj_bbox = np.array([np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)])
+                room_bbox_meta.append((obj.get_name(), obj_bbox))
+            
+        # clean up: TODO: move to a separate function
         room_bbox_meta = merge_bbox(args.scene_idx, args.room_idx, room_bbox_meta)
+        result_room_bbox_meta = []
+        for bbox_meta in room_bbox_meta:
+            flag_use = True
+            obj_name = bbox_meta[0]
+            for ban_word in OBJ_BAN_LIST:
+                if ban_word in obj_name:
+                    flag_use=False
+            if 'keyword_ban_list' in ROOM_CONFIG[args.scene_idx][args.room_idx].keys():
+                for ban_word in ROOM_CONFIG[args.scene_idx][args.room_idx]['keyword_ban_list']:
+                    if ban_word in obj_name:
+                        flag_use=False
+            if 'fullname_ban_list' in ROOM_CONFIG[args.scene_idx][args.room_idx].keys():
+                for fullname in ROOM_CONFIG[args.scene_idx][args.room_idx]['fullname_ban_list']:
+                    if fullname == obj_name.strip():
+                        flag_use=False
+            if flag_use:
+                result_room_bbox_meta.append(bbox_meta)
+        room_bbox_meta = result_room_bbox_meta
 
     if args.overview:
         overview_dir = os.path.join(dst_dir, 'overview')

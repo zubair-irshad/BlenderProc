@@ -23,13 +23,10 @@
 2:
   0:
     bbox: [[0.75, -0.8], [3.9, 2.4]]
-    keyword_ban_list: []
-    fullname_ban_list: []
 3:
   0:
     bbox: [[0.8, -1.0], [5, 5]]
     keyword_ban_list: [Nightstand.001, Nightstand.003, Ceiling Lamp]
-    fullname_ban_list: []
   1:
     bbox: [[1.3, -7.35], [5.0, -2.5]]
   2:
@@ -37,45 +34,29 @@
 4:
   0:
     bbox: [[1.9, -3.9], [6.6, -0.5]]
-    keyword_ban_list: []
-    fullname_ban_list: []
 5:
   0:
     bbox: [[0.6, -2.2], [4.3, 0.8]]
-    keyword_ban_list: []
     fullname_ban_list: [bed, bed.002, bed.003, bed.005, bed.006, bed.007, lighting.003]
   1:
     bbox: [[-3.5, -4], [-0.8, -0.9]]
-    keyword_ban_list: []
     fullname_ban_list: [lighting.002]
   2:
     bbox: [[1.1, -5.6], [5.9, -2.2]]
-    keyword_ban_list: []
-    fullname_ban_list: []
 6:
   0:
     bbox: [[-6.1, -4.5], [-1.2, 2.1]]
-    keyword_ban_list: []
-    fullname_ban_list: []
 7:
   0:
     bbox: [[-4.8, 2.1], [-1.4, 6.6]]
     keyword_ban_list: [ExtrusionCustomizedBackgroundWall]
-    fullname_ban_list: []
 8:
   0:
     bbox: [[-5.1, -9.4], [-1.6, -6]]
-    keyword_ban_list: []
-    fullname_ban_list: []
   1:
     bbox: [[2.8, -3.2], [6.9, 1.3]]
-    keyword_ban_list: []
-    fullname_ban_list: []
   2:
     bbox: [[-5.1, -4], [-0.8, 1.3]]
-    keyword_ban_list: []
-    fullname_ban_list: []
-    merge_list: []
 10:
   0:
     bbox: [[1.7, -18.4], [6.0, -14.2]]
@@ -103,7 +84,6 @@
   0:
     bbox: [[3.5, -6], [7.2, -2.1]]
     keyword_ban_list: [lighting]
-    fullname_ban_list: []
     merge_list:
       light: [lighting.003, lighting.007, lighting.006]
 15:
@@ -112,12 +92,8 @@
 16:
   0:
     bbox: [[-4.5, -4.7], [-1.3, -1.2]]
-    keyword_ban_list: []
-    fullname_ban_list: []
   1:
     bbox: [[-5.4, 1.3], [-1.9, 6]]
-    keyword_ban_list: []
-    fullname_ban_list: []
     merge_list:
       lighting: [lighting.009, lighting.008, lighting.007, lighting.006, lighting]
 17:
@@ -181,3 +157,44 @@
     merge_list:
       furniture.001: [CustomizedFurniture.001, CustomizedFurniture.002, CustomizedFurniture.003]
       furniture.002: [CustomizedFurniture.004, CustomizedFurniture.005, CustomizedFurniture.006]
+26:
+  0:
+    bbox: [[-6.2, -1.5], [-0.5, 3.9]]
+    fullname_ban_list: [Others.007, Others.008, Others.009, CustomizedPlatform.001, Others.012, Others.013,Others.015]
+  1:
+    bbox: [[3.8, -0.8], [9.2, 6]]
+    merge_list:
+      light: [lighting.002, lighting.003]
+      CustomizedPlatform: [CustomizedPlatform.007, CustomizedPlatform.008, CustomizedPlatform.009, CustomizedPlatform.010]
+    fullname_ban_list: [art, lighting]
+27:
+  0:
+    bbox: [[-2.85, -3], [0.65, 0.9]]
+    merge_list:
+      lighting: [others.011, others.012, others.013]
+28:
+  0:
+    bbox: [[-5.7, -1.7], [-2.1, 2.7]]
+    keyword_ban_list: [Cornice]
+  1:
+    bbox: [[-0.3, -4.7], [3.1, -1.7]]
+    fullname_ban_list: [Pendant Lamp.002, Pendant Lamp.003, Pendant Lamp.004]
+29:
+  0:
+    bbox: [[0.1, -4], [3.7, -1.1]]
+    keyword_ban_list: [others.003, others.004, others.005]
+30:
+  0:
+    bbox: [[-6.7, -5.6], [-3.3, -1.6]]
+    keyword_ban_list: [ExtrusionCustomizedBackgroundWall]
+32:
+  0:
+    bbox: [[0.9, -0.3], [6.2, 4.2]]
+    merge_list:
+      sofa: [sofa, sofa.001, sofa.002, sofa.003]
+    fullname_ban_list: [lighting]
+33:
+  0:
+    bbox: [[-3.9, -2.5], [-0.1, 3.8]]
+  1:
+    bbox: [[-0.1, -0.25], [3, 3.85]]
