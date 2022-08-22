@@ -14,11 +14,12 @@ import numpy as np
 import re
 import imageio
 import sys
+sys.path.append('/data/jhuangce/BlenderProc/scripts')
 sys.path.append('/data2/jhuangce/BlenderProc/scripts')
 from render_configs import *
+from bbox_proj import project_bbox_to_image
 import json
 from typing import List
-from bbox_proj import project_bbox_to_image
 from os.path import join
 import glob
 
@@ -26,9 +27,9 @@ import glob
 pi = np.pi
 cos = np.cos
 sin = np.sin
-LAYOUT_DIR = '/data2/jhuangce/3D-FRONT'
-TEXTURE_DIR = '/data2/jhuangce/3D-FRONT-texture'
-MODEL_DIR = '/data2/jhuangce/3D-FUTURE-model'
+LAYOUT_DIR = '../3D-FRONT'
+TEXTURE_DIR = '../3D-FRONT-texture'
+MODEL_DIR = '../3D-FUTURE-model'
 RENDER_TEMP_DIR = './FRONT3D_render/temp'
 SCENE_LIST = []
 
@@ -651,7 +652,7 @@ if __name__ == '__main__':
     parser.add_argument('--plan', action='store_true', help='Generate the floor plan of the scene.')
     parser.add_argument('--overview', action='store_true', help='Generate 4 corner overviews with bbox projected.')
     parser.add_argument('--render', action='store_true', help='Render images in the scene')
-    parser.add_argument('-ppo', '--pos_per_obj', type=int, default=20, help='Number of close-up poses for each object.')
+    parser.add_argument('-ppo', '--pos_per_obj', type=int, default=15, help='Number of close-up poses for each object.')
     parser.add_argument('-gp', '--max_global_pos', type=int, default=150, help='Max number of global poses.')
     parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses. Smaller global_density -> more global views')
     parser.add_argument('-nc', '--no_check', action='store_true', default=False, help='Do not the poses. Render directly.')

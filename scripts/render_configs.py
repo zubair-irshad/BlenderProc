@@ -12,7 +12,8 @@ K = np.array([
 
 # OBJ_BAN_LIST is a global keyword ban list for all the rooms 
 OBJ_BAN_LIST = ['Baseboard', 'Pocket', 'Floor', 'SlabSide.', 'WallInner', 'Front', 
-                'WallTop', 'WallBottom', 'Ceiling.', 'FeatureWall', 'LightBand']
+                'WallTop', 'WallBottom', 'Ceiling.', 'FeatureWall', 'LightBand',
+                'ExtrusionCustomizedCeilingModel']
 
 ROOM_CONFIG = {}
 with open('./scripts/room_configs.yaml', 'r') as f:
