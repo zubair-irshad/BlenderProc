@@ -14,11 +14,16 @@ import numpy as np
 import re
 import imageio
 import sys
+<<<<<<< HEAD
 sys.path.append('/home/yliugu/BlenderProc/scripts')
+=======
+sys.path.append('/data/jhuangce/BlenderProc/scripts')
+sys.path.append('/data2/jhuangce/BlenderProc/scripts')
+>>>>>>> f64956ebdc789326545864a796890a1900947670
 from render_configs import *
+from bbox_proj import project_bbox_to_image
 import json
 from typing import List
-from bbox_proj import project_bbox_to_image
 from os.path import join
 import glob
 
@@ -26,9 +31,15 @@ import glob
 pi = np.pi
 cos = np.cos
 sin = np.sin
+<<<<<<< HEAD
 LAYOUT_DIR = '/data/yliugu/3D-FRONT'
 TEXTURE_DIR = '/data/yliugu/3D-FRONT-texture'
 MODEL_DIR = '/data/yliugu/3D-FUTURE-model'
+=======
+LAYOUT_DIR = '../3D-FRONT'
+TEXTURE_DIR = '../3D-FRONT-texture'
+MODEL_DIR = '../3D-FUTURE-model'
+>>>>>>> f64956ebdc789326545864a796890a1900947670
 RENDER_TEMP_DIR = './FRONT3D_render/temp'
 SCENE_LIST = []
 
@@ -43,15 +54,11 @@ def construct_scene_list():
 
 def check_cache_dir(scene_idx):
     if not os.path.isdir(f'./cached/{scene_idx}'):
-        os.mkdir(f'./cached/{scene_idx}')
+        os.makedirs(f'./cached/{scene_idx}')
 
 
 def add_texture(obj:MeshObject, tex_path):
-    """ Add a texture to an object. 
-        Args:
-            obj: MeshObject
-            tex_path: path to the texture
-    """
+    """ Add a texture to an object. """
     obj.clear_materials()
     mat = obj.new_material('my_material')
     bsdf = mat.nodes["Principled BSDF"]
@@ -83,42 +90,13 @@ def load_scene_objects(scene_idx, overwrite=False):
         elif 'floor' in name.lower():
             add_texture(obj, TEXTURE_DIR+"/0b48b46d-4f0b-418d-bde6-30ca302288e6/texture.png")
         # elif 'ceil' in name.lower():
+<<<<<<< HEAD
         #     add_texture(obj, "/data/yliugu/3D-FRONT-texture/0a5adcc7-f17f-488f-9f95-8690cbc31321/texture.png")
+=======
+        #     add_texture(obj, TEXTURE_DIR+"/0a5adcc7-f17f-488f-9f95-8690cbc31321/texture.png")
+>>>>>>> f64956ebdc789326545864a796890a1900947670
 
     return loaded_objects
-
-
-def get_cameras_in_oval_trajectory(scene_idx, room_idx = None):
-    """ Generate the camera locations and rotations in a room according to oval trajectory. """
-    locations, rotations = [], []
-    config_dict = ROOM_CONFIG[scene_idx]
-    for key, value in config_dict.items():
-        if room_idx!=None and key!=room_idx:
-            continue
-        # the trajectory is an ellipse
-        center = value['center'] # (3, 2.2)
-        a = value['a'] # 1.5
-        b = value['b'] # 2.2
-        num = value['num_cam'] # 2
-        for i in range(num):
-            theta = 2*np.pi*i/num
-            location = [a*np.cos(theta)+center[0], b*np.sin(theta)+center[1], 1.2]
-            high_location = [a*np.cos(theta)+center[0], b*np.sin(theta)+center[1], 2]
-            rot_root = [1.4, 0, np.arcsin(-b*np.cos(theta)/np.sqrt((a*np.sin(theta))**2+(b*np.cos(theta))**2))-np.pi]
-            if location[1]<center[1]:
-                rot_root[2] = 3*np.pi-rot_root[2]
-            locations += 4 * [location]
-            locations += [high_location]
-            deg = np.pi / 6
-            rotations += [rot_root]
-            rotations += [[rot_root[0], rot_root[1], rot_root[2]-deg]]
-            rotations += [[rot_root[0], rot_root[1], rot_root[2]+deg]]
-            rotations += [[rot_root[0]+deg, rot_root[1], rot_root[2]]]
-            rotations += [[rot_root[0]-deg, rot_root[1], rot_root[2]]]
-
-    # print(locations) debug
-    # print(rotations) debug
-    return locations, rotations
 
 def get_scene_bbox_meta(scene_idx, overwrite=False):
     """ Get the bounding box meta data of a scene. 
@@ -171,23 +149,6 @@ class FloorPlan():
         self.height = int((self.scene_max-self.scene_min)[1]*self.scale)+self.margin*2
 
         self.image = np.ones((self.height,self.width,3), np.uint8)
-    
-    def draw_samples(self, locs=None, rots=None):
-        if locs == None:
-            if self.scene_idx not in CAMERA_LOCS.keys():
-                return
-            for pos in CAMERA_LOCS[self.scene_idx]:
-                cv2.circle(self.image, self.point_to_image(pos), radius=25, color=(0,255,0), thickness=3)
-                cv2.putText(self.image, 'camera', self.point_to_image(pos), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0))
-        else:
-            if rots!= None:
-                for pos, rots in zip(locs, rots):
-                    cv2.circle(self.image, self.point_to_image(pos), radius=25, color=(0,255,0), thickness=3)
-                    point = [pos[0]+np.cos(rots[2]+np.pi/2)/10, pos[1]+np.sin(rots[2]+np.pi/2)/10]
-                    cv2.line(self.image, self.point_to_image(pos), self.point_to_image(point), color=(0,255,0), thickness=3)
-            else:
-                for pos in locs:
-                    cv2.circle(self.image, self.point_to_image(pos), radius=25, color=(0,255,0), thickness=3)
 
     def draw_coords(self):
         
@@ -234,17 +195,9 @@ class FloorPlan():
     def save(self, file_name, dst_dir):
         cv2.imwrite(join(dst_dir, file_name), self.image)
     
-    def drawsamples_and_save(self):
-        self.draw_objects()
-        self.draw_coords()
-        self.draw_samples() # customizable
-        self.save('floor_plan.jpg')
-    
     def drawgroups_and_save(self, dst_dir):
         self.draw_objects()
         self.draw_coords()
-        # locs, rots = get_cameras_in_oval_trajectory(self.scene_idx)
-        # self.draw_samples(locs, rots) # customizable
         self.draw_room_bbox()
         self.save('floor_plan.jpg', dst_dir)
 
@@ -260,121 +213,6 @@ def image_to_video(img_dir, video_dir):
 
     imageio.mimwrite(os.path.join(video_dir, 'video.mp4'), np.stack(rgb_maps), fps=30, quality=8)
 
-def render_sample(scene_idx, device):
-    """ Each camera position render 4 images. """
-    bproc.init(compute_device=device, compute_device_type='CUDA')
-    mapping_file = bproc.utility.resolve_resource(os.path.join("front_3D", "3D_front_mapping.csv"))
-    mapping = bproc.utility.LabelIdMapping.from_csv(mapping_file)
-
-    bproc.renderer.set_light_bounces(diffuse_bounces=200, glossy_bounces=200, max_bounces=200,
-                                  transmission_bounces=200, transparent_max_bounces=200)
-
-    loaded_objects = load_scene_objects(scene_idx)
-
-    bvh_tree = bproc.object.create_bvh_tree_multi_objects([o for o in loaded_objects if isinstance(o, bproc.types.MeshObject)])
-
-    for xy in CAMERA_LOCS[scene_idx]:
-        for i in range(4):
-            location = np.array([xy[0], xy[1], 1.5])
-            rotation = [1.6, 0, 2*np.pi*i/4]
-            cam2world_matrix = bproc.math.build_transformation_mat(location, rotation)
-            bproc.camera.add_camera_pose(cam2world_matrix)
-            
-    
-    bproc.camera.set_intrinsics_from_K_matrix(K, IMG_WIDTH, IMG_HEIGHT)
-
-    data = bproc.renderer.render(output_dir='./output')
-
-    if not os.path.isdir('./output/%04d' % scene_idx):
-        os.mkdir('./output/%04d' % scene_idx)
-    for i in range(len(data['colors'])):
-        im_rgb = cv2.cvtColor(data['colors'][i], cv2.COLOR_BGR2RGB)
-        cv2.imwrite('./output/%04d/img_%02d.jpg' % (scene_idx, i), im_rgb)
-
-def render_room(scene_idx, room_idx, device):
-    """ Each camera position render 8 images. """
-    bproc.init(compute_device=device, compute_device_type='CUDA')
-    mapping_file = bproc.utility.resolve_resource(os.path.join("front_3D", "3D_front_mapping.csv"))
-    mapping = bproc.utility.LabelIdMapping.from_csv(mapping_file)
-
-    bproc.renderer.set_light_bounces(diffuse_bounces=200, glossy_bounces=200, max_bounces=200,
-                                  transmission_bounces=200, transparent_max_bounces=200)
-
-    loaded_objects = load_scene_objects(scene_idx)
-    bbox_mins = []
-    bbox_maxs = []
-    for i in range(len(loaded_objects)):
-        object = loaded_objects[i]
-        bbox = object.get_bound_box()
-        bbox_min = np.min(bbox, axis=0)
-        bbox_max = np.max(bbox, axis=0)
-        bbox_mins.append(bbox_min)
-        bbox_maxs.append(bbox_max)
-    scene_min = np.min(bbox_mins, axis=0)
-    scene_max = np.max(bbox_maxs, axis=0)
-
-    bvh_tree = bproc.object.create_bvh_tree_multi_objects([o for o in loaded_objects if isinstance(o, bproc.types.MeshObject)])
-    
-    room_config = ROOM_CONFIG[scene_idx][room_idx]
-    scene_min[:2] = room_config['bbox'][0]
-    scene_max[:2] = room_config['bbox'][1]
-
-    poses = []
-    locs, rots = get_cameras_in_oval_trajectory(scene_idx, room_idx)
-    for loc, rot in zip(locs, rots):
-        cam2world_matrix = bproc.math.build_transformation_mat(loc, rot)
-        bproc.camera.add_camera_pose(cam2world_matrix)
-        poses.append(np.array(cam2world_matrix).tolist())
-    
-    bproc.camera.set_intrinsics_from_K_matrix(K, IMG_WIDTH, IMG_HEIGHT)
-
-    from os.path import join
-    out_root = './FRONT3D_render/'
-    outdir = out_root+'%03d_%d' % (scene_idx, room_idx)
-    rgbdir = join(outdir, 'rgb')
-    posedir = join(outdir, 'pose')
-    if os.path.isdir(outdir):
-        shutil.rmtree(outdir)
-    os.mkdir(outdir)
-    os.mkdir(rgbdir)
-    os.mkdir(posedir)
-    
-    with open(join(outdir, 'intrinsic.txt'), 'w') as f:
-        for line in K:
-            f.write('%.1f %.1f %.1f\n' % (line[0], line[1], line[2]))
-    with open(join(outdir, 'bbox.txt'), 'w') as f:
-        f.write(f'{scene_min[0]} {scene_min[1]} {scene_min[2]} {scene_max[0]} {scene_max[1]} {scene_max[2]} 0.01\n')
-
-    data = bproc.renderer.render(output_dir=out_root)
-    for i in range(len(data['colors'])):
-        im_rgb = cv2.cvtColor(data['colors'][i], cv2.COLOR_BGR2RGB)
-        name = 'img%03d' % i
-        cv2.imwrite(join(rgbdir, name+'.jpg'), im_rgb)
-        with open(join(posedir, name+'.txt'), 'w') as f:
-            for line in poses[i]:
-                f.write('%f %f %f %f\n' % (line[0], line[1], line[2], line[3]))
-    
-    # Writing to .json
-    frames = []
-    for i in range(len(poses)):
-        frames += [{"file_path": "rgb/img%03d.jpg" % i, "transform_matrix": poses[i]}]
-    
-    import random
-    randIndex = random.sample(range(len(frames)), 6)
-    randIndex.sort()
-    train_frames, test_frames = [], []
-    for i in range(len(frames)):
-        if i in randIndex:
-            test_frames += [frames[i]]
-        else:
-            train_frames += [frames[i]]
- 
-    with open(os.path.join(outdir, 'transforms_train.json'), 'w') as f:
-        f.write(json.dumps({"frames": train_frames}, indent=4))
-    with open(os.path.join(outdir, 'transforms_val.json'), 'w') as f:
-        f.write(json.dumps({"frames": test_frames}, indent=4))
-    with open(os.path.join(outdir, 'transforms_test.json'), 'w') as f:
-        f.write(json.dumps({"frames": test_frames}, indent=4))
 
 def normalize(x, axis=-1, order=2):
     l2 = np.linalg.norm(x, order, axis)
@@ -620,6 +458,41 @@ def merge_bbox(scene_idx, room_idx, room_bbox_meta):
             room_bbox_meta = result_room_bbox_meta
     return room_bbox_meta
 
+def filter_bbox(scene_idx, room_idx, room_bbox_meta):
+    # clean up: TODO: move to a separate function
+    # Steps:
+    #   1. merge
+    #   2. check globa OBJ_BAN_LIST
+    #   2. check keyword_ban_list
+    #   3. check fullname_ban_list
+    room_bbox_meta = merge_bbox(scene_idx, room_idx, room_bbox_meta)
+    result_room_bbox_meta = []
+    for bbox_meta in room_bbox_meta:
+        flag_use = True
+        obj_name = bbox_meta[0]
+        for ban_word in OBJ_BAN_LIST:
+            if ban_word in obj_name:
+                flag_use=False
+        if 'keyword_ban_list' in ROOM_CONFIG[scene_idx][room_idx].keys():
+            for ban_word in ROOM_CONFIG[scene_idx][room_idx]['keyword_ban_list']:
+                if ban_word in obj_name:
+                    flag_use=False
+        if 'fullname_ban_list' in ROOM_CONFIG[scene_idx][room_idx].keys():
+            for fullname in ROOM_CONFIG[scene_idx][room_idx]['fullname_ban_list']:
+                if fullname == obj_name.strip():
+                    flag_use=False
+        if flag_use:
+            result_room_bbox_meta.append(bbox_meta)
+    return result_room_bbox_meta
+
+def reg_label(room_bbox_meta):
+    ...
+    label_list = ['table', 'chair', 'cabinet', 'lighting', 'nightstand']
+    for label in label_list:
+        if label in obj_label:
+            obj_label = label
+    return obj_label
+
 def render_poses(poses, temp_dir=RENDER_TEMP_DIR) -> List:
     """ Render a scene with a list of poses. 
         No room idx is needed because the poses can be anywhere in the room. """
@@ -710,6 +583,28 @@ def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_bbox_meta, dst_di
     for i, img in enumerate(imgs):
         cv2.imwrite(join(imgdir, '{:04d}.jpg'.format(i)), img)
 
+def rewrite_labels(room_bbox_meta, dst_dir):
+    """ This function rewrite transforms.json by adding labels to bboxes. """
+
+    json_path = os.path.join(dst_dir, 'train/transforms.json')
+    with open(json_path, 'r') as f:
+        meta = json.load(f)
+
+    bounding_boxes = []
+    for i, obj in enumerate(room_bbox_meta):
+        label = str(obj[0])
+        obj_bbox = np.array(obj[1])
+        obj_bbox_ngp = {
+            "label": label,
+            "extents": (obj_bbox[1]-obj_bbox[0]).tolist(),
+            "orientation": np.eye(3).tolist(),
+            "position": ((obj_bbox[0]+obj_bbox[1])/2.0).tolist(),
+        }
+        bounding_boxes.append(obj_bbox_ngp)
+    meta['bounding_boxes'] = bounding_boxes
+
+    with open(os.path.join(dst_dir, 'train/transforms_new.json'), 'w') as f:
+        json.dump(meta, f, indent=4)
 
 def save_in_tensorf_format(imgs, poses, room_bbox, dst_dir):
     print('Save in TensoRF format...')
@@ -752,6 +647,7 @@ def save_in_tensorf_format(imgs, poses, room_bbox, dst_dir):
 
 ###########################################################################################
 
+
 if __name__ == '__main__':
 
     """
@@ -774,15 +670,20 @@ if __name__ == '__main__':
     parser.add_argument('--plan', action='store_true', help='Generate the floor plan of the scene.')
     parser.add_argument('--overview', action='store_true', help='Generate 4 corner overviews with bbox projected.')
     parser.add_argument('--render', action='store_true', help='Render images in the scene')
-    parser.add_argument('-ppo', '--pos_per_obj', type=int, default=10, help='Number of close-up poses for each object.')
-    parser.add_argument('-gp', '--max_global_pos', type=int, default=500, help='Max number of global poses.')
+    parser.add_argument('-ppo', '--pos_per_obj', type=int, default=15, help='Number of close-up poses for each object.')
+    parser.add_argument('-gp', '--max_global_pos', type=int, default=150, help='Max number of global poses.')
     parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses. Smaller global_density -> more global views')
     parser.add_argument('-nc', '--no_check', action='store_true', default=False, help='Do not the poses. Render directly.')
     parser.add_argument('--gpu', type=str, default="1")
+    parser.add_argument('--relabel', action='store_true', help='Relabel the objects in the scene by rewriting transforms.json.')
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+<<<<<<< HEAD
     dst_dir = '/data/yliugu/BlenderProc/FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
+=======
+    dst_dir = './FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
+>>>>>>> f64956ebdc789326545864a796890a1900947670
     os.makedirs(dst_dir, exist_ok=True)
 
     construct_scene_list()
@@ -800,6 +701,7 @@ if __name__ == '__main__':
     if args.overview or args.render:
         cache_dir = f'./cached/{args.scene_idx}'
         if args.overview and os.path.isfile(cache_dir + '/names.npy') and len(glob.glob(join(dst_dir, 'overview/raw/*'))) > 0:
+            # use cached object information and overview images if available
             names = np.load(cache_dir + '/names.npy')
             bbox_maxs = np.load(cache_dir + '/bbox_maxs.npy')
             bbox_mins = np.load(cache_dir + '/bbox_mins.npy')
@@ -808,7 +710,8 @@ if __name__ == '__main__':
             for i in range(len(names)):
                 if bbox_contained([bbox_mins[i], bbox_maxs[i]], room_bbox):
                     room_bbox_meta.append((names[i], [bbox_mins[i], bbox_maxs[i]]))
-        else: # init and load objects to blenderproc
+        else: 
+            # init and load objects to blenderproc
             bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
             loaded_objects = load_scene_objects(args.scene_idx)
             room_objects = get_room_objects(args.scene_idx, args.room_idx, loaded_objects)
@@ -818,31 +721,7 @@ if __name__ == '__main__':
                 obj_bbox_8 = obj.get_bound_box()
                 obj_bbox = np.array([np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)])
                 room_bbox_meta.append((obj.get_name(), obj_bbox))
-            
-        # clean up: TODO: move to a separate function
-        # Steps:
-        #   1. merge
-        #   2. check keyword_ban_list
-        #   3. check fullname_ban_list
-        room_bbox_meta = merge_bbox(args.scene_idx, args.room_idx, room_bbox_meta)
-        result_room_bbox_meta = []
-        for bbox_meta in room_bbox_meta:
-            flag_use = True
-            obj_name = bbox_meta[0]
-            for ban_word in OBJ_BAN_LIST:
-                if ban_word in obj_name:
-                    flag_use=False
-            if 'keyword_ban_list' in ROOM_CONFIG[args.scene_idx][args.room_idx].keys():
-                for ban_word in ROOM_CONFIG[args.scene_idx][args.room_idx]['keyword_ban_list']:
-                    if ban_word in obj_name:
-                        flag_use=False
-            if 'fullname_ban_list' in ROOM_CONFIG[args.scene_idx][args.room_idx].keys():
-                for fullname in ROOM_CONFIG[args.scene_idx][args.room_idx]['fullname_ban_list']:
-                    if fullname == obj_name.strip():
-                        flag_use=False
-            if flag_use:
-                result_room_bbox_meta.append(bbox_meta)
-        room_bbox_meta = result_room_bbox_meta
+        room_bbox_meta = filter_bbox(args.scene_idx, args.room_idx, room_bbox_meta)
 
     if args.overview:
         overview_dir = os.path.join(dst_dir, 'overview')
@@ -853,14 +732,17 @@ if __name__ == '__main__':
         cached_img_paths = glob.glob(cache_dir+'/*')
         imgs = []
         if len(cached_img_paths) > 0 and True:
+            # use cached overview images if available
             for img_path in sorted(cached_img_paths):
                 imgs.append(cv2.imread(img_path))
         else:
+            # render overview images
             imgs = render_poses(poses, overview_dir)
             os.makedirs(cache_dir, exist_ok=True)
             for i, img in enumerate(imgs):
                 cv2.imwrite(join(cache_dir, f'raw_{i}.jpg'), img)
 
+        # generate bounding box images
         aabb_codes, labels, colors = [], [], []
         for obj in room_bbox_meta:
             obj_bbox = obj[1]
@@ -876,10 +758,12 @@ if __name__ == '__main__':
         for i, img in enumerate(imgs_projected):
             cv2.imwrite(os.path.join(os.path.join(dst_dir, 'overview'), 'proj_{}.png'.format(i)), img)
         
-        labels.sort()
-        for label in labels:
+        for label in sorted(labels):
             print(label)
         print(f"{len(labels)} objects in total.\n")
+
+        if args.relabel:
+            rewrite_labels(room_bbox_meta, dst_dir)
 
     if args.render:
         poses, num_closeup, num_global = generate_room_poses(args.scene_idx, args.room_idx, room_bbox_meta, room_bbox, 
