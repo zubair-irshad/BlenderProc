@@ -14,7 +14,7 @@ import numpy as np
 import re
 import imageio
 import sys
-sys.path.append('/data2/jhuangce/BlenderProc/scripts')
+sys.path.append('/home/yliugu/BlenderProc/scripts')
 from render_configs import *
 import json
 from typing import List
@@ -26,9 +26,9 @@ import glob
 pi = np.pi
 cos = np.cos
 sin = np.sin
-LAYOUT_DIR = '/data2/jhuangce/3D-FRONT'
-TEXTURE_DIR = '/data2/jhuangce/3D-FRONT-texture'
-MODEL_DIR = '/data2/jhuangce/3D-FUTURE-model'
+LAYOUT_DIR = '/data/yliugu/3D-FRONT'
+TEXTURE_DIR = '/data/yliugu/3D-FRONT-texture'
+MODEL_DIR = '/data/yliugu/3D-FUTURE-model'
 RENDER_TEMP_DIR = './FRONT3D_render/temp'
 SCENE_LIST = []
 
@@ -60,6 +60,8 @@ def add_texture(obj:MeshObject, tex_path):
     mat.links.new(bsdf.inputs['Base Color'], texImage.outputs['Color'])
 
 
+
+# TODO: read config file
 def load_scene_objects(scene_idx, overwrite=False):
     check_cache_dir(scene_idx)
     mapping_file = bproc.utility.resolve_resource(os.path.join("front_3D", "3D_front_mapping.csv"))
@@ -81,7 +83,7 @@ def load_scene_objects(scene_idx, overwrite=False):
         elif 'floor' in name.lower():
             add_texture(obj, TEXTURE_DIR+"/0b48b46d-4f0b-418d-bde6-30ca302288e6/texture.png")
         # elif 'ceil' in name.lower():
-        #     add_texture(obj, "/data2/jhuangce/3D-FRONT-texture/0a5adcc7-f17f-488f-9f95-8690cbc31321/texture.png")
+        #     add_texture(obj, "/data/yliugu/3D-FRONT-texture/0a5adcc7-f17f-488f-9f95-8690cbc31321/texture.png")
 
     return loaded_objects
 
@@ -696,6 +698,8 @@ def save_in_ngp_format(imgs, poses, intrinsic, room_bbox, room_bbox_meta, dst_di
             "position": ((obj_bbox[0]+obj_bbox[1])/2.0).tolist(),
         }
         out['bounding_boxes'].append(obj_bbox_ngp)
+
+    out['is_merge_bbox'] = 'No'
     
     with open(join(train_dir, 'transforms.json'), 'w') as f:
         json.dump(out, f, indent=4)
@@ -778,7 +782,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-    dst_dir = '/data2/jhuangce/BlenderProc/FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
+    dst_dir = '/data/yliugu/BlenderProc/FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
     os.makedirs(dst_dir, exist_ok=True)
 
     construct_scene_list()
