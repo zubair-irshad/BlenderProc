@@ -316,3 +316,72 @@
     fullname_ban_list: [Cabinet.169, Cabinet.200]
     merge_list:
       cabinet: [Cabinet.148, Cabinet.149, Cabinet.150, Cabinet.151, Cabinet.152, Cabinet.153, Cabinet.154, Cabinet.155]
+53:
+  0:
+    bbox: [[-2.5, -3], [1.1, 3]]
+    fullname_ban_list: [Pendant Lamp.001]
+    merge_list:
+      table1: [Tea Table.003, Tea Table.004, Tea Table.005]
+      table2: [Tea Table.006, Tea Table.007, Tea Table.008]
+      table3: [Tea Table, Tea Table.001, Tea Table.002]
+      chair1: [Dining Chair, Dining Chair.001, Dining Chair.002, Dining Chair.003]
+      chair2: [Dining Chair.004, Dining Chair.005, Dining Chair.006, Dining Chair.007]
+      chair3: [Dining Chair.008, Dining Chair.009, Dining Chair.010, Dining Chair.011]
+      chair4: [Dining Chair.012, Dining Chair.013, Dining Chair.014, Dining Chair.015]
+54:
+  0:
+    bbox: [[0.6, -3.5], [4, 0.2]]
+    merge_list:
+      plants: [plants, plants.001, plants.002, 
+               plants.003, plants.004, plants.005, plants.006]
+      aircon: [electronics, electronics.001, electronics.002]
+      sofa: [sofa, sofa.001, sofa.002, sofa.003, sofa.004, sofa.005, sofa.006, sofa.007, sofa.008]
+      table: [table.002, table.003]
+    keyword_ban_list: [Cornice]
+  1:
+    bbox: [[0.6, 0], [4.1, 2.8]]
+    merge_list:
+      shoes: [accessory, accessory.001, accessory.002, accessory.003, accessory.004, 
+              accessory.005, accessory.006, accessory.007, accessory.008, accessory.010, 
+              accessory.011, accessory.012]
+55:
+  0:
+    bbox: [[-6.6, -2.2], [-3.6, 1.3]]
+    merge_list:
+      bed: [others.001, others.002, others.003, others.004, others.005, 
+            others.006, others.007]
+62:
+  0:
+    bbox: [[-9.2, 1.7], [-5, 5.55]]
+63:
+  0:
+    bbox: [[-0.7, -10.4], [4, -5.5]]
+    merge_list:
+      chair1: [Dining Chair, Dining Chair.001, Dining Chair.002, Dining Chair.003, Dining Chair.004, Dining Chair.005]
+      chair2: [Dining Chair.006, Dining Chair.007, Dining Chair.008, Dining Chair.009, Dining Chair.010, Dining Chair.011]
+      chair3: [Dining Chair.012, Dining Chair.013, Dining Chair.014, Dining Chair.015, Dining Chair.016, Dining Chair.017]
+      chair4: [Dining Chair.018, Dining Chair.019, Dining Chair.020, Dining Chair.021, Dining Chair.022, Dining Chair.023]
+      chair5: [Dining Chair.024, Dining Chair.025, Dining Chair.026, Dining Chair.027, Dining Chair.028, Dining Chair.029]
+      chair6: [Dining Chair.030, Dining Chair.031, Dining Chair.032, Dining Chair.033, Dining Chair.034, Dining Chair.035]
+  1:
+    bbox: [[-0.7, -5], [4, 2.1]]
+    merge_list:
+      lighting: [Pendant Lamp, Pendant Lamp.001]
+65:
+  0:
+    bbox: [[-1.9, -0.6], [2.2, 4.5]]
+  
+  1:
+    bbox: [[-4.2, -5.5], [-1.2, -2]]
+67:
+  0:
+    bbox: [[-2.9, -4.3], [1.1, 0.3]]
+  1:
+    bbox: [[-2.9, 0], [1.1, 4]]
+68:
+  0:
+    bbox: [[0.4, 3], [4.45, 7.8]]
+69:
+  0:
+    bbox: [[-5.8, -3.4], [0.8, 0.7]]
+    fullname_ban_list: [others.019]
