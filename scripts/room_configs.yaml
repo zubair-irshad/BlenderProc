@@ -391,6 +391,10 @@
 
 
 
+
+
+
+
 1000:
   0:
     bbox: [[-4.1, 0.], [-0.65, 4.5]]
@@ -461,6 +465,9 @@
     bbox: [[0, -1.1], [2.4, 2.7]]
   3:
     bbox: [[2.45,-2.3],[5.6, 2.7]]
+    keyword_ban_list: [Door]
+    merge_list:
+      cabinet: [others.010, others.013, others.026, others.027, others.028, others.030]
 
 
 1005:
@@ -549,6 +556,8 @@
       sofa: [sofa,sofa.001,sofa.002,sofa.003,sofa.004,sofa.005,sofa.006,sofa.007,sofa.008]
       media unit: [media unit,media unit.001,media unit.002,media unit.003,media unit.004,media unit.005,media unit.006,media unit.007]
       table: [table.004, table.005,table.006,table.007,table.008, table.009]
+      lighting: [lighting, lighting.005]
+    fullname_ban_list: [lighting.006]
 
 1014:
   0:
@@ -565,6 +574,7 @@
     bbox: [[-5.7, -2], [0.7, 2.2]]
     merge_list:
       sofa: [sofa,sofa.001,sofa.002,sofa.003,sofa.004,sofa.005]
+      table: [table.002, table.003]
   2:
     bbox: [[-5.7, -5.3], [-1.6, -2.1]]
   3:
