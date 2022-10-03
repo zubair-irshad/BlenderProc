@@ -32,6 +32,7 @@ TEXTURE_DIR = '../3D-FRONT-texture'
 MODEL_DIR = '../3D-FUTURE-model'
 RENDER_TEMP_DIR = './FRONT3D_render/temp'
 SCENE_LIST = []
+COMPUTE_DEVICE_TYPE = 'CUDA'
 
 
 def construct_scene_list():
@@ -697,7 +698,7 @@ if __name__ == '__main__':
                     room_bbox_meta.append((names[i], [bbox_mins[i], bbox_maxs[i]]))
         else: 
             # init and load objects to blenderproc
-            bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
+            bproc.init(compute_device='cuda:0', compute_device_type=COMPUTE_DEVICE_TYPE)
             loaded_objects = load_scene_objects(args.scene_idx)
             room_objects = get_room_objects(args.scene_idx, args.room_idx, loaded_objects)
             room_bbox = get_room_bbox(args.scene_idx, args.room_idx, loaded_objects=loaded_objects)
@@ -783,7 +784,7 @@ if __name__ == '__main__':
                     room_bbox_meta.append((names[i], [bbox_mins[i], bbox_maxs[i]]))
         else: 
             # init and load objects to blenderproc
-            bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
+            bproc.init(compute_device='cuda:0', compute_device_type=COMPUTE_DEVICE_TYPE)
             loaded_objects = load_scene_objects(args.scene_idx)
             room_objects = get_room_objects(args.scene_idx, args.room_idx, loaded_objects)
             room_bbox = get_room_bbox(args.scene_idx, args.room_idx, loaded_objects=loaded_objects)
