@@ -37,6 +37,7 @@ class Entity(Struct):
         :param rotation_euler: The euler angles to set.
         :param frame: The frame number which the value should be set to. If None is given, the current frame number is used.
         """
+        
         self.blender_obj.rotation_euler = rotation_euler
         Utility.insert_keyframe(self.blender_obj, "rotation_euler", frame)
 
@@ -97,6 +98,7 @@ class Entity(Struct):
         :return: The 4x4 local2world matrix.
         """
         obj = self.blender_obj
+
         # Start with local2parent matrix (if obj has no parent, that equals local2world)
         matrix_world = obj.matrix_basis
 

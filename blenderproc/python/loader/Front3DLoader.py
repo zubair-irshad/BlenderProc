@@ -404,6 +404,7 @@ class Front3DLoader:
                             else:
                                 # if it is the first time use the object directly
                                 new_obj = obj
+
                             created_objects.append(new_obj)
                             new_obj.set_cp("is_used", True)
                             new_obj.set_cp("room_id", room_id)

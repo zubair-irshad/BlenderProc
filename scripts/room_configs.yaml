@@ -573,3 +573,253 @@
     bbox: [[2.2, -4.3], [6.2, -0.8]]
     fullname_ban_list: [Ceiling,WallOuter.004,WallOuter.005]
 
+1016:
+  0:
+    bbox: [[-3.5, 1.9], [0.2, 6.1]]
+  1:
+    bbox: [[0.2, 1.4], [3.5, 5.3]]
+  2:
+    bbox: [[-3.2, -3.8], [1.7, 0.1]]
+    merge_list:
+      table: [others.005,others.006,others.007]
+      bottle: [others.008,others.009,others.010,others.011,others.012]
+      chair: [others.014,others.015,others.016]
+
+
+1017:
+  0:
+    bbox: [[-0.6, -0.1], [4.6, 3.8]]
+    merge_list:
+      table: [others.013,others.014, others.015]
+      bottle: [ others.016, others.017, others.018,others.019,others.020]
+  1:
+    bbox: [[0, -3.5], [3.3, -0.05]]
+  2:
+    bbox: [[-4., -5.], [0, -1.75]]
+
+1018:
+  0:
+    bbox: [[1.4, 1.3], [5.2, 6]]
+  1:
+    bbox: [[-6.2, 1.6], [-2.9, 5.4]]
+    merge_list:
+      lighting: [lighting.001, lighting.002]
+  2:
+    bbox: [[-2.5, 0.3], [1.4, 6.3]]
+
+
+1019:
+  0:
+    bbox: [[0.85, -1.4], [4.1, 3.1]]
+    fullname_ban_list: [Others]
+    merge_list: 
+      Nightstand.001: [Nightstand,Nightstand.001]
+      Nightstand.002: [Nightstand.002,Nightstand.003]
+  1:
+    bbox: [[-2.6, -0.4], [1, 3.3]]
+    merge_list:
+      Lighting: [Lighting,Lighting.001]
+
+
+1020:
+  0:
+    bbox: [[-3.8, 0.4], [0.3, 4.3]] 
+    merge_list:
+      table.001: [table.001, table.002]
+      table.002: [table.003, table.004]
+      table.009: [table.009, table.010]
+      media unit: [media unit,media unit.001,media unit.002,media unit.003,media unit.004,media unit.005,media unit.006,media unit.007]
+    
+
+  1:
+    bbox: [[0.3, 0.4], [3.1, 4.3]]
+    merge_list:
+      lighting: [lighting,lighting.002,lighting.003]
+      table: [table.005,table.006]
+  2:
+    bbox: [[2, -4.5], [5, -0.2]]
+    merge_list:
+      Dressing Table: [Dressing Table, Dressing Table.001]
+      Dressing Table.001: [Dressing Table.002, Dressing Table.003]
+      Pendant Lamp: [Pendant Lamp, Pendant Lamp.001]
+
+1022:
+  0:
+    bbox: [[0.3, 0.3], [3.8, 4.2]]
+    merge_list:
+      bed: [others.005, others.007]
+  1:
+    bbox: [[-3.7, -3], [0, -0.8]]
+  2:
+    bbox: [[-3.7, -0.7], [0.3, 4.2]]
+    merge_list:
+      lighting: [others.025,others.026]
+
+1023:
+  0:
+    bbox: [[-0.7, -5.9], [5.6, -2.1]]
+    fullname_ban_list: [Back,Back.012,Ceiling]
+  1:
+    bbox: [[-0.2, -0.3], [5.3, 4.6]]
+    merge_list:
+      sofa.001: [sofa.001,sofa.002,sofa.003,sofa.004,sofa.005]
+      sofa.002: [sofa, sofa.011,sofa.012, sofa.013,  sofa.014]
+      sofa.003: [sofa.007,sofa.008, sofa.009, sofa.010]
+      lighting: [lighting,lighting.005,lighting.006]
+      media unit: [media unit,media unit.001,media unit.002,media unit.003,media unit.004,media unit.005,media unit.006,media unit.007]
+    keyword_ban_list: [void]
+    fullname_ban_list: [sofa.015,  sofa.006,]
+
+1025:
+  0:
+    bbox: [[-4.2, 2.7], [0, 6.9]]
+    merge_list: 
+      table: [Table,sofa.001]
+  1:
+    bbox: [[-0.1, -6.], [3.5, -2.2]]
+    merge_list:
+      lamp: [Pendant Lamp.006,Pendant Lamp.007,Pendant Lamp.008,Pendant Lamp.009,Pendant Lamp.010,Pendant Lamp.011]
+      chair: [Lounge Chair / Book-chair / Computer Chair,Lounge Chair / Book-chair / Computer Chair.001,Lounge Chair / Book-chair / Computer Chair.002,Lounge Chair / Book-chair / Computer Chair.003,Lounge Chair / Book-chair / Computer Chair.004,Lounge Chair / Book-chair / Computer Chair.005]
+      chair.001: [Lounge Chair / Book-chair / Computer Chair.006,Lounge Chair / Book-chair / Computer Chair.007,Lounge Chair / Book-chair / Computer Chair.008,Lounge Chair / Book-chair / Computer Chair.009,Lounge Chair / Book-chair / Computer Chair.010,Lounge Chair / Book-chair / Computer Chair.011]
+      chair.002: [Lounge Chair / Book-chair / Computer Chair.012,Lounge Chair / Book-chair / Computer Chair.013,Lounge Chair / Book-chair / Computer Chair.014,Lounge Chair / Book-chair / Computer Chair.015,Lounge Chair / Book-chair / Computer Chair.016,Lounge Chair / Book-chair / Computer Chair.017]
+      chair.003: [Lounge Chair / Book-chair / Computer Chair.018,Lounge Chair / Book-chair / Computer Chair.019,Lounge Chair / Book-chair / Computer Chair.020,Lounge Chair / Book-chair / Computer Chair.021,Lounge Chair / Book-chair / Computer Chair.022,Lounge Chair / Book-chair / Computer Chair.023]
+      chair.004: [Lounge Chair / Book-chair / Computer Chair.024,Lounge Chair / Book-chair / Computer Chair.025,Lounge Chair / Book-chair / Computer Chair.026,Lounge Chair / Book-chair / Computer Chair.027,Lounge Chair / Book-chair / Computer Chair.028,Lounge Chair / Book-chair / Computer Chair.029]
+      chair.005: [Lounge Chair / Book-chair / Computer Chair.030,Lounge Chair / Book-chair / Computer Chair.031,Lounge Chair / Book-chair / Computer Chair.032,Lounge Chair / Book-chair / Computer Chair.033,Lounge Chair / Book-chair / Computer Chair.034,Lounge Chair / Book-chair / Computer Chair.035]
+  2:
+    bbox: [[-6.8, -2.4], [-0.1, 2.7]]
+    merge_list:
+      Pendant Lamp: [Pendant Lamp,Pendant Lamp.001,Pendant Lamp.002,Pendant Lamp.003,Pendant Lamp.004,Pendant Lamp.005]
+      Corner/Side Table: [Corner/Side Table,Corner/Side Table.011,Corner/Side Table.012,Corner/Side Table.013,Corner/Side Table.014,Corner/Side Table.015,Corner/Side Table.016,Corner/Side Table.017,Corner/Side Table.018,Corner/Side Table.019,Corner/Side Table.020,Corner/Side Table.021,Corner/Side Table.022,Corner/Side Table.023,Corner/Side Table.024,Corner/Side Table.025,Corner/Side Table.026,Corner/Side Table.027,Corner/Side Table.028,Corner/Side Table.029,Corner/Side Table.030,Corner/Side Table.031,Corner/Side Table.032,Corner/Side Table.033,Corner/Side Table.034,Corner/Side Table.035,Corner/Side Table.036,Corner/Side Table.037,Corner/Side Table.038,Corner/Side Table.039,Corner/Side Table.040,Corner/Side Table.041,Corner/Side Table.042,Corner/Side Table.043,Corner/Side Table.044,Corner/Side Table.045]
+
+    keyword_ban_list: [Lighting]
+
+1026:
+  0: 
+    bbox: [[-1.2, 1.2], [2.1, 5.1]]
+    merge_list:
+      desk: [others.003,others.004]
+      cabinet: [others.002, others.036]
+    fullname_ban_list: [others.006]
+  1:
+    bbox: [[2.1, 1.1], [6.1, 5.1]]
+    merge_list:
+      sofa: [others.017, others.018]
+      table: [others.021, others.022]
+  2:  
+    bbox: [[-4.4, -3.5], [-1.2, 0.]]
+  3:
+    bbox: [[-4.4, 1.5], [-1.1, 6.9]]
+    merge_list:
+      lighting: [others.014,others.015]
+  4:
+    bbox: [[1.5, -5], [6, -1.5]]
+
+1029:
+  0:
+    bbox: [[-1.3, -0.7], [3.3, 4.9]]
+1030:
+  0:
+    bbox: [[-10.1, -3.5], [-6.7, 0.5]]
+    merge_list:
+      Dining Chair: [Dining Chair,Dining Chair.001,Dining Chair.002,Dining Chair.003,Dining Chair.004]
+      Dining Chair.001: [Dining Chair.005,Dining Chair.006,Dining Chair.007,Dining Chair.008,Dining Chair.009]
+      Dining Chair.002: [Dining Chair.010,Dining Chair.011,Dining Chair.012,Dining Chair.013,Dining Chair.014]
+      Dining Chair.003: [Dining Chair.015,Dining Chair.016,Dining Chair.017,Dining Chair.018,Dining Chair.019]
+      Dining Chair.004: [Dining Chair.020,Dining Chair.021,Dining Chair.022,Dining Chair.023,Dining Chair.024]
+
+  1:
+    bbox: [[-6.4, -6.7], [-1.7, -1.7]]
+    merge_list:
+      TV Stand: [TV Stand,TV Stand.001,TV Stand.002,TV Stand.003,TV Stand.004,TV Stand.005,TV Stand.006,TV Stand.007]
+      tea table: [Tea Table,Tea Table.001]
+      Corner/Side Table: [Corner/Side Table,Corner/Side Table.001,Corner/Side Table.002,Corner/Side Table.003,Corner/Side Table.004,Corner/Side Table.005]
+
+1031:
+  0: 
+    bbox: [[-5.7, -1.1],[-0.5, 2.2]]
+    fullname_ban_list: [lighting.002, lighting.003, lighting.004]
+    merge_list:
+      sofa: [sofa,sofa.001,sofa.002]
+      plants: [plants,plants.001,plants.002,plants.003,plants.004,plants.005,plants.006]
+
+1032:
+  0:
+    bbox: [[-2,2.1], [2.2,5]]
+
+1033:
+  0:
+    bbox: [[0.3, -0.1], [4.9, 3.4]]
+    fullname_ban_list: [lighting.004]
+  1:
+    bbox: [[-2.5, 0], [0, 3.3]]
+    keyword_ban_list: [lighting]
+
+1034:
+  0:
+    bbox: [[-3.4, -0.6],[0.2, 4.7]]
+    merge_list:
+      table: [others.007, others.008]
+      sofa: [others.001, others.002, others.003]
+      chair: [others.004, others.005]
+  1:
+    bbox: [[0.4,-6.3], [3.8, -2.7]]
+    fullname_ban_list: [Ceiling Lamp]
+    merge_list:
+      Nightstand: [Nightstand, Nightstand.001]
+      Nightstand.001: [Nightstand.002, Nightstand.003]
+
+1035:
+  0:
+    bbox: [[-4.5, 0.9], [-0.8, 5.1]]
+    fullname_ban_list: [lighting.002]
+
+
+1036:
+  0:
+    bbox: [[2., -0.1], [6.7,3.7]]
+  1:
+    bbox: [[-2.6, -0.1], [1.9, 3.7]]
+    merge_list:
+      cabinet: [Cabinet.219,Cabinet.220,Cabinet.221,Cabinet.222,Cabinet.223,Cabinet.224,Cabinet.225,Cabinet.226,Cabinet.227,Cabinet.228,Cabinet.229,Cabinet.230,Cabinet.231,Cabinet.232,Cabinet.233,Cabinet.234,Cabinet.235,Cabinet.236,Cabinet.237,Cabinet.238,Cabinet.239,Cabinet.240,Cabinet.241,Cabinet.242,Cabinet.243,Cabinet.244,Cabinet.245,Cabinet.246,Cabinet.247,Cabinet.248,Cabinet.249,Cabinet.250,Cabinet.251,Cabinet.252,Cabinet.253,Cabinet.254,Cabinet.255,Cabinet.256,Cabinet.257,Cabinet.258]
+  2:
+    bbox: [[-8, -1.5], [-4.7, 1.8]]
+    fullname_ban_list: [Ceiling Lamp]
+    merge_list:
+      cabinet: [Cabinet,Cabinet.001,Cabinet.002,Cabinet.003,Cabinet.004,Cabinet.005,Cabinet.006,Cabinet.007,Cabinet.008,Cabinet.009]
+
+1038:
+  0:
+    bbox: [[-3.1, -1.7], [1, 2]]
+  1:
+    bbox: [[1, -1.7], [4.1, 1.9]]
+    merge_list:
+      lighting: [others.017, others.021]
+  2:
+    bbox: [[-3, -4.5], [0.9, -1.7]]
+
+1039:
+  0:
+    bbox: [[-0.6, -1.7], [4.9, 1.5]]
+    merge_list:
+      TV Stand: [TV Stand,TV Stand.001,TV Stand.002,TV Stand.003]
+      TV Stand.001: [ TV Stand.004,TV Stand.005,TV Stand.006,TV Stand.007]
+  1:
+    bbox: [[-0.6,1.5], [4.9, 4.5]]
+  2:
+    bbox: [[-4.2, -1.7],[-0.6,1.9]]
+    keyword_ban_list: [lighting]
+1040:
+  0:
+    bbox: [[-1.8, -9.7], [5.8, -4]]
+    fullname_ban_list: [lighting, Back.025]
+
+# scene_idx:
+#   room_idx:
+#     bbox: [[], []]
+#     keyword_ban_list: []
+#     fullname_ban_list: []
+#     merge_list:
+#       label1: []
+#       ...
+#   ...
+# ...
