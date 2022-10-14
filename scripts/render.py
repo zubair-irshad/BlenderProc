@@ -13,12 +13,17 @@ import numpy as np
 
 import imageio
 import sys
+<<<<<<< HEAD
 from floor_plan import *
 from load_helper import *
 
 sys.path.append('/data/jhuangce/BlenderProc/scripts')
 sys.path.append('/data2/jhuangce/BlenderProc/scripts')
 
+=======
+sys.path.append('/data/jhuangce/BlenderProc/scripts')
+sys.path.append('/data2/jhuangce/BlenderProc/scripts')
+>>>>>>> f69790c962f2061cf42e20f86c21b7f11f11cd79
 from render_configs import *
 from bbox_proj import project_bbox_to_image
 import json
@@ -32,13 +37,13 @@ cos = np.cos
 sin = np.sin
 
 
-
 def construct_scene_list():
     """ Construct a list of scenes and save to SCENE_LIST global variable. """
     scene_list = sorted([join(LAYOUT_DIR, name) for name in os.listdir(LAYOUT_DIR)])
     for scene_path in scene_list:
         SCENE_LIST.append(scene_path)
     print(f"SCENE_LIST is constructed. {len(SCENE_LIST)} scenes in total")
+
 
 
 
@@ -513,6 +518,7 @@ if __name__ == '__main__':
     parser.add_argument('--plan', action='store_true', help='Generate the floor plan of the scene.')
     parser.add_argument('--overview', action='store_true', help='Generate 4 corner overviews with bbox projected.')
     parser.add_argument('--render', action='store_true', help='Render images in the scene')
+    parser.add_argument('--yichen', action='store_true', help='Overwrite bboxes by regenerating transforms.json.')
     parser.add_argument('-ppo', '--pos_per_obj', type=int, default=15, help='Number of close-up poses for each object.')
     parser.add_argument('-gp', '--max_global_pos', type=int, default=150, help='Max number of global poses.')
     parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses. Smaller global_density -> more global views')
@@ -524,7 +530,12 @@ if __name__ == '__main__':
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
-    dst_dir = '/data/yliugu/BlenderProc/FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
+
+    # dst_dir = '/data/yliugu/BlenderProc/FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
+
+    # dst_dir = '/data/yliugu/BlenderProc/FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
+    dst_dir = './FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
+
     os.makedirs(dst_dir, exist_ok=True)
 
     construct_scene_list()
@@ -545,15 +556,11 @@ if __name__ == '__main__':
 
     if args.overview or args.render:
         cache_dir = f'./cached/{args.scene_idx}'
+
         if args.rotation:
-            if args.overview and os.path.isfile(cache_dir + '/bboxes.npy') and len(glob.glob(join(dst_dir, 'overview/raw/*'))) > 0:
-                names = np.load(cache_dir + '/names.npy')
-                bbox_mins = np.load(cache_dir + '/bboxes.npy')
-                room_bbox = get_room_bbox(args.scene_idx, args.room_idx, scene_bbox_meta=[names, bbox_mins, bbox_maxs])
-                room_bbox_meta = []
-                for i in range(len(names)):
-                    if bbox_contained([bbox_mins[i], bbox_maxs[i]], room_bbox):
-                        room_bbox_meta.append((names[i], [bbox_mins[i], bbox_maxs[i]]))
+            # TODO: rotation render
+            
+            pass
         else:
             if args.overview and os.path.isfile(cache_dir + '/bboxes_mins.npy') and len(glob.glob(join(dst_dir, 'overview/raw/*'))) > 0:
                 # use cached object information and overview images if available
@@ -635,5 +642,51 @@ if __name__ == '__main__':
             input('Press Enter to continue...')
 
         save_in_ngp_format(None, poses, K, room_bbox, room_bbox_meta, dst_dir) # late rendering
+    
+    if args.yichen:
+        json_path = os.path.join(dst_dir, 'train/transforms.json')
+        json_path_result = os.path.join(dst_dir, 'train/transforms.json')
+        
+        cache_dir = f'./cached/{args.scene_idx}'
+        if args.overview and os.path.isfile(cache_dir + '/names.npy') and len(glob.glob(join(dst_dir, 'overview/raw/*'))) > 0:
+            # use cached object information and overview images if available
+            names = np.load(cache_dir + '/names.npy')
+            bbox_maxs = np.load(cache_dir + '/bbox_maxs.npy')
+            bbox_mins = np.load(cache_dir + '/bbox_mins.npy')
+            room_bbox = get_room_bbox(args.scene_idx, args.room_idx, scene_bbox_meta=[names, bbox_mins, bbox_maxs])
+            room_bbox_meta = []
+            for i in range(len(names)):
+                if bbox_contained([bbox_mins[i], bbox_maxs[i]], room_bbox):
+                    room_bbox_meta.append((names[i], [bbox_mins[i], bbox_maxs[i]]))
+        else: 
+            # init and load objects to blenderproc
+            bproc.init(compute_device='cuda:0', compute_device_type=COMPUTE_DEVICE_TYPE)
+            loaded_objects = load_scene_objects(args.scene_idx)
+            room_objects = get_room_objects(args.scene_idx, args.room_idx, loaded_objects)
+            room_bbox = get_room_bbox(args.scene_idx, args.room_idx, loaded_objects=loaded_objects)
+            room_bbox_meta = []
+            for obj in room_objects:
+                obj_bbox_8 = obj.get_bound_box()
+                obj_bbox = np.array([np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)])
+                room_bbox_meta.append((obj.get_name(), obj_bbox))
+        room_bbox_meta = filter_bbox(args.scene_idx, args.room_idx, room_bbox_meta)
+
+        with open(json_path, 'r') as f:
+            meta = json.load(f)
+        
+        bounding_boxes = []
+        for i, obj in enumerate(room_bbox_meta):
+            obj_bbox = np.array(obj[1])
+            obj_bbox_ngp = {
+                "extents": (obj_bbox[1]-obj_bbox[0]).tolist(),
+                "orientation": np.eye(3).tolist(),
+                "position": ((obj_bbox[0]+obj_bbox[1])/2.0).tolist(),
+            }
+            bounding_boxes.append(obj_bbox_ngp)
+        meta['bounding_boxes'] = bounding_boxes
+        
+        with open(json_path_result, 'w') as f:
+            json.dump(meta, f, indent=4)
+
 
     print("Success.")
