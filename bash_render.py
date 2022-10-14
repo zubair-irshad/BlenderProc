@@ -11,7 +11,7 @@ skip = {1003: [0,1,2,3], 1005: [0,1], 1008: [0], 1009:[0]}
 
 all_scene_keys = ALL_ROOM_CONFIG.keys()
 all_skip_keys = skip.keys()
-for i in range(1012, 1016):
+for i in range(1038, 1041):
     if i not in all_scene_keys:
         print(f'Scene {i} does not have config.')
         continue

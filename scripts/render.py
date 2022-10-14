@@ -3,19 +3,27 @@
 import blenderproc as bproc
 from random import shuffle
 import shutil
-from blenderproc.python.types.MeshObjectUtility import MeshObject
-import bpy
 import sys
 sys.path.append('/home/jhuangce/miniconda3/lib/python3.9/site-packages')
+sys.path.append('/home/yliugu/BlenderProc/scripts')
 import cv2
 import os
 from os.path import join
 import numpy as np
-import re
+
 import imageio
 import sys
+<<<<<<< HEAD
+from floor_plan import *
+from load_helper import *
+
 sys.path.append('/data/jhuangce/BlenderProc/scripts')
 sys.path.append('/data2/jhuangce/BlenderProc/scripts')
+
+=======
+sys.path.append('/data/jhuangce/BlenderProc/scripts')
+sys.path.append('/data2/jhuangce/BlenderProc/scripts')
+>>>>>>> f69790c962f2061cf42e20f86c21b7f11f11cd79
 from render_configs import *
 from bbox_proj import project_bbox_to_image, project_obbox_to_image
 import json
@@ -27,12 +35,6 @@ import glob
 pi = np.pi
 cos = np.cos
 sin = np.sin
-LAYOUT_DIR = '../3D-FRONT'
-TEXTURE_DIR = '../3D-FRONT-texture'
-MODEL_DIR = '../3D-FUTURE-model'
-RENDER_TEMP_DIR = './FRONT3D_render/temp'
-SCENE_LIST = []
-COMPUTE_DEVICE_TYPE = 'CUDA'
 
 
 def construct_scene_list():
@@ -43,151 +45,8 @@ def construct_scene_list():
     print(f"SCENE_LIST is constructed. {len(SCENE_LIST)} scenes in total")
 
 
-def check_cache_dir(scene_idx):
-    if not os.path.isdir(f'./cached/{scene_idx}'):
-        os.makedirs(f'./cached/{scene_idx}')
 
 
-def add_texture(obj:MeshObject, tex_path):
-    """ Add a texture to an object. """
-    obj.clear_materials()
-    mat = obj.new_material('my_material')
-    bsdf = mat.nodes["Principled BSDF"]
-    texImage = mat.nodes.new('ShaderNodeTexImage')
-    texImage.image = bpy.data.images.load(tex_path)
-    mat.links.new(bsdf.inputs['Base Color'], texImage.outputs['Color'])
-
-
-
-# TODO: read config file
-def load_scene_objects(scene_idx, overwrite=False):
-    check_cache_dir(scene_idx)
-    mapping_file = bproc.utility.resolve_resource(os.path.join("front_3D", "3D_front_mapping.csv"))
-    mapping = bproc.utility.LabelIdMapping.from_csv(mapping_file)
-    loaded_objects = bproc.loader.load_front3d(
-        json_path=SCENE_LIST[scene_idx],
-        future_model_path=MODEL_DIR,
-        front_3D_texture_path=TEXTURE_DIR,
-        label_mapping=mapping,
-        ceiling_light_strength=1,
-        lamp_light_strength=30
-    )
-
-    # add texture to wall and floor. Otherwise they will be white.
-    for obj in loaded_objects:
-        name = obj.get_name()
-        if 'wall' in name.lower():
-            add_texture(obj, TEXTURE_DIR+"/1b57700d-f41b-4ac7-a31a-870544c3d608/texture.png")
-        elif 'floor' in name.lower():
-            add_texture(obj, TEXTURE_DIR+"/0b48b46d-4f0b-418d-bde6-30ca302288e6/texture.png")
-        # elif 'ceil' in name.lower():
-        #     add_texture(obj, "/data/yliugu/3D-FRONT-texture/0a5adcc7-f17f-488f-9f95-8690cbc31321/texture.png")
-        #     add_texture(obj, TEXTURE_DIR+"/0a5adcc7-f17f-488f-9f95-8690cbc31321/texture.png")
-
-    return loaded_objects
-
-def get_scene_bbox_meta(scene_idx, overwrite=False):
-    """ Get the bounding box meta data of a scene. 
-        [(name1, [[xmin, ymin, zmin], [xmax, ymax, zmax]]), (name2, [[xmin, ymin, zmin], [xmax, ymax, zmax]]), ...]
-    """
-    check_cache_dir(scene_idx)
-    if os.path.isfile('./cached/%d/names.npy' % scene_idx) and overwrite==False:
-        print(f'Found cached information for scene {scene_idx}.')
-        names = np.load(f'./cached/{scene_idx}/names.npy')
-        bbox_mins = np.load(f'./cached/{scene_idx}/bbox_mins.npy')
-        bbox_maxs = np.load(f'./cached/{scene_idx}/bbox_maxs.npy')
-    else:
-        loaded_objects = load_scene_objects(scene_idx, overwrite)
-        names = []
-        bbox_mins = []
-        bbox_maxs = []
-        for i in range(len(loaded_objects)):
-            object = loaded_objects[i]
-            name = object.get_name()
-            bbox = object.get_bound_box()
-            bbox_min = np.min(bbox, axis=0)
-            bbox_max = np.max(bbox, axis=0)
-            names.append(name)
-            bbox_mins.append(bbox_min)
-            bbox_maxs.append(bbox_max)
-
-        np.save(f'./cached/{scene_idx}/names.npy', names)
-        np.save(f'./cached/{scene_idx}/bbox_mins.npy', bbox_mins)
-        np.save(f'./cached/{scene_idx}/bbox_maxs.npy', bbox_maxs)
-
-    return names, bbox_mins, bbox_maxs
-
-red = (0,0,255)
-green = (0,255,0)
-blue = (255,0,0)
-class FloorPlan():
-    def __init__(self, scene_idx):
-        self.scene_idx = scene_idx
-        self.names, self.bbox_mins, self.bbox_maxs = get_scene_bbox_meta(scene_idx)
-
-        self.scene_min = np.min(self.bbox_mins, axis=0)
-        self.scene_max = np.max(self.bbox_maxs, axis=0)
-        print('scene_min:', self.scene_min)
-        print('scene_max', self.scene_max)
-
-        self.scale = 200
-        self.margin = 100
-
-        self.width = int((self.scene_max-self.scene_min)[0]*self.scale)+self.margin*2
-        self.height = int((self.scene_max-self.scene_min)[1]*self.scale)+self.margin*2
-
-        self.image = np.ones((self.height,self.width,3), np.uint8)
-
-    def draw_coords(self):
-        
-        seg = 0.08
-        x0, y0 = self.point_to_image([0,0,0])
-        cv2.line(self.image, (0,y0), (self.width-1, y0), color=red, thickness=3)
-        cv2.line(self.image, (x0,0), (x0, self.height-1), color=red, thickness=3)
-        
-        for i in range(int(np.floor(self.scene_min[0])), int(np.ceil(self.scene_max[0])+1)):
-            cv2.line(self.image, self.point_to_image([i, -seg]), self.point_to_image([i, seg]), color=red, thickness=2)
-        for i in range(int(np.floor(self.scene_min[1])), int(np.ceil(self.scene_max[1])+1)):
-            cv2.line(self.image, self.point_to_image([-seg, i]), self.point_to_image([seg, i]), color=red, thickness=2)
-        
-        cv2.putText(self.image, 'x+', (self.width-80, y0-20), cv2.FONT_HERSHEY_SIMPLEX, 2, red, thickness=2)
-        cv2.putText(self.image, 'y+', (x0+20, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, red, thickness=2)
-    
-    def draw_room_bbox(self):
-        if self.scene_idx in ROOM_CONFIG.keys():
-            for value in ROOM_CONFIG[self.scene_idx].values():
-                scene_bbox = value['bbox']
-                cv2.rectangle(self.image, self.point_to_image(scene_bbox[0]), self.point_to_image(scene_bbox[1]), color=blue, thickness=5)
-    
-    def draw_objects(self):
-        for i in range(len(self.names)):
-            x1, y1 = self.point_to_image(self.bbox_mins[i])
-            x2, y2 = self.point_to_image(self.bbox_maxs[i])
-            color = np.random.randint(0, 255, size=3)
-            color = (int(color[0]), int(color[1]), int(color[2]))
-
-            if self.names[i][:4] == 'Wall':
-                cv2.rectangle(self.image, (x1, y1), (x2, y2), (255, 255, 0), -1)
-            elif self.names[i][:5] == 'Floor':
-                pass
-            else:
-                cv2.rectangle(self.image, (x1, y1), (x2, y2), color, 2)
-                cv2.putText(self.image, self.names[i], (x2,y2), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color)
-    
-    def point_to_image(self, point_3d):
-        """ Args: \\
-                point_3d: raw float 3D point [x, y, z]
-        """
-        return int(point_3d[0]*self.scale - self.scene_min[0]*self.scale + self.margin), self.height-int(point_3d[1]*self.scale - self.scene_min[1]*self.scale + self.margin)
-    
-    def save(self, file_name, dst_dir):
-        cv2.imwrite(join(dst_dir, file_name), self.image)
-    
-    def drawgroups_and_save(self, dst_dir):
-        self.draw_objects()
-        self.draw_coords()
-        self.draw_room_bbox()
-        self.save('floor_plan.jpg', dst_dir)
 
 def image_to_video(img_dir, video_dir):
     """ Args: 
@@ -423,6 +282,7 @@ def get_room_objects(scene_idx, room_idx, loaded_objects, cleanup=False):
     # print(room_bbox) #debug
     for object in loaded_objects:
         obj_bbox_8 = object.get_bound_box()
+        
         obj_bbox = [np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)]
         if bbox_contained(obj_bbox, room_bbox):
             objects.append(object)
@@ -666,11 +526,17 @@ if __name__ == '__main__':
     parser.add_argument('-nc', '--no_check', action='store_true', default=False, help='Do not check the poses. Render directly.')
     parser.add_argument('--gpu', type=str, default="1")
     parser.add_argument('--relabel', action='store_true', help='Relabel the objects in the scene by rewriting transforms.json.')
+    parser.add_argument('--rotation', action='store_true', help = 'output rotation bounding boxes if it is true.')
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+
+
+    # dst_dir = '/data/yliugu/BlenderProc/FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
+
     # dst_dir = '/data/yliugu/BlenderProc/FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
     dst_dir = './FRONT3D_render/3dfront_{:04d}_{:02}'.format(args.scene_idx, args.room_idx)
+
     os.makedirs(dst_dir, exist_ok=True)
 
     construct_scene_list()
@@ -679,35 +545,45 @@ if __name__ == '__main__':
         if args.scene_idx < 0 or args.scene_idx > 6812:
             raise ValueError("%d is not a valid scene_idx. Should provide a scene_idx between 0 and 6812 inclusively")
         os.makedirs(os.path.join(dst_dir, 'overview'), exist_ok=True)
-        floor_plan = FloorPlan(args.scene_idx)
-        floor_plan.drawgroups_and_save(os.path.join(dst_dir, 'overview'))
-    
+        if args.rotation:
+            floor_plan = FloorPlan_rot(args.scene_idx)
+            floor_plan.drawgroups_and_save(os.path.join(dst_dir, 'overview'))
+
+        else:
+            floor_plan = FloorPlan(args.scene_idx)
+            floor_plan.drawgroups_and_save(os.path.join(dst_dir, 'overview'))
     if args.overview and args.render:
         raise ValueError("Error: Cannot render overview and rendering at the same time. ")
 
     if args.overview or args.render:
         cache_dir = f'./cached/{args.scene_idx}'
-        if args.overview and os.path.isfile(cache_dir + '/names.npy') and len(glob.glob(join(dst_dir, 'overview/raw/*'))) > 0:
-            # use cached object information and overview images if available
-            names = np.load(cache_dir + '/names.npy')
-            bbox_maxs = np.load(cache_dir + '/bbox_maxs.npy')
-            bbox_mins = np.load(cache_dir + '/bbox_mins.npy')
-            room_bbox = get_room_bbox(args.scene_idx, args.room_idx, scene_bbox_meta=[names, bbox_mins, bbox_maxs])
-            room_bbox_meta = []
-            for i in range(len(names)):
-                if bbox_contained([bbox_mins[i], bbox_maxs[i]], room_bbox):
-                    room_bbox_meta.append((names[i], [bbox_mins[i], bbox_maxs[i]]))
-        else: 
-            # init and load objects to blenderproc
-            bproc.init(compute_device='cuda:0', compute_device_type=COMPUTE_DEVICE_TYPE)
-            loaded_objects = load_scene_objects(args.scene_idx)
-            room_objects = get_room_objects(args.scene_idx, args.room_idx, loaded_objects)
-            room_bbox = get_room_bbox(args.scene_idx, args.room_idx, loaded_objects=loaded_objects)
-            room_bbox_meta = []
-            for obj in room_objects:
-                obj_bbox_8 = obj.get_bound_box()
-                obj_bbox = np.array([np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)])
-                room_bbox_meta.append((obj.get_name(), obj_bbox))
+
+        if args.rotation:
+            # TODO: rotation render
+            
+            pass
+        else:
+            if args.overview and os.path.isfile(cache_dir + '/bboxes_mins.npy') and len(glob.glob(join(dst_dir, 'overview/raw/*'))) > 0:
+                # use cached object information and overview images if available
+                names = np.load(cache_dir + '/names.npy')
+                bbox_maxs = np.load(cache_dir + '/bbox_maxs.npy')
+                bbox_mins = np.load(cache_dir + '/bbox_mins.npy')
+                room_bbox = get_room_bbox(args.scene_idx, args.room_idx, scene_bbox_meta=[names, bbox_mins, bbox_maxs])
+                room_bbox_meta = []
+                for i in range(len(names)):
+                    if bbox_contained([bbox_mins[i], bbox_maxs[i]], room_bbox):
+                        room_bbox_meta.append((names[i], [bbox_mins[i], bbox_maxs[i]]))
+            else: 
+                # init and load objects to blenderproc
+                bproc.init(compute_device='cuda:0', compute_device_type='CUDA')
+                loaded_objects = load_scene_objects(args.scene_idx)
+                room_objects = get_room_objects(args.scene_idx, args.room_idx, loaded_objects)
+                room_bbox = get_room_bbox(args.scene_idx, args.room_idx, loaded_objects=loaded_objects)
+                room_bbox_meta = []
+                for obj in room_objects:
+                    obj_bbox_8 = obj.get_bound_box()
+                    obj_bbox = np.array([np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)])
+                    room_bbox_meta.append((obj.get_name(), obj_bbox))
         room_bbox_meta = filter_bbox(args.scene_idx, args.room_idx, room_bbox_meta)
 
     if args.overview:
