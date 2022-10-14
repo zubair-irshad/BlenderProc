@@ -17,7 +17,7 @@ import sys
 sys.path.append('/data/jhuangce/BlenderProc/scripts')
 sys.path.append('/data2/jhuangce/BlenderProc/scripts')
 from render_configs import *
-from bbox_proj import project_bbox_to_image
+from bbox_proj import project_bbox_to_image, project_obbox_to_image
 import json
 from typing import List
 from os.path import join
@@ -658,11 +658,12 @@ if __name__ == '__main__':
     parser.add_argument('--plan', action='store_true', help='Generate the floor plan of the scene.')
     parser.add_argument('--overview', action='store_true', help='Generate 4 corner overviews with bbox projected.')
     parser.add_argument('--render', action='store_true', help='Render images in the scene')
+    parser.add_argument('--check_obb', action='store_true', help='Check how to generate obb')
     parser.add_argument('--yichen', action='store_true', help='Overwrite bboxes by regenerating transforms.json.')
     parser.add_argument('-ppo', '--pos_per_obj', type=int, default=15, help='Number of close-up poses for each object.')
     parser.add_argument('-gp', '--max_global_pos', type=int, default=150, help='Max number of global poses.')
     parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses. Smaller global_density -> more global views')
-    parser.add_argument('-nc', '--no_check', action='store_true', default=False, help='Do not the poses. Render directly.')
+    parser.add_argument('-nc', '--no_check', action='store_true', default=False, help='Do not check the poses. Render directly.')
     parser.add_argument('--gpu', type=str, default="1")
     parser.add_argument('--relabel', action='store_true', help='Relabel the objects in the scene by rewriting transforms.json.')
     args = parser.parse_args()
@@ -767,6 +768,46 @@ if __name__ == '__main__':
 
         save_in_ngp_format(None, poses, K, room_bbox, room_bbox_meta, dst_dir) # late rendering
     
+    if args.check_obb:
+        bproc.init(compute_device='cuda:0', compute_device_type=COMPUTE_DEVICE_TYPE)
+        loaded_objects = load_scene_objects(args.scene_idx)
+        room_objects = get_room_objects(args.scene_idx, args.room_idx, loaded_objects)
+
+        overview_dir = os.path.join(dst_dir, 'overview')
+        os.makedirs(overview_dir, exist_ok=True)
+
+        cache_dir = join(dst_dir, 'overview/raw')
+        cached_img_paths = glob.glob(cache_dir+'/*')
+        imgs = []
+        if len(cached_img_paths) > 0 and True:
+            # use cached overview images if available
+            for img_path in sorted(cached_img_paths):
+                imgs.append(cv2.imread(img_path))
+        else:
+            # render overview images
+            imgs = render_poses(poses, overview_dir)
+            os.makedirs(cache_dir, exist_ok=True)
+            for i, img in enumerate(imgs):
+                cv2.imwrite(join(cache_dir, f'raw_{i}.jpg'), img)
+        
+        # generate bounding box images
+        poses = generate_four_corner_poses(args.scene_idx, args.room_idx)
+        obboxes, labels, colors = [], [], []
+        for obj in room_objects:
+            obbox = obj.get_bound_box() 
+            obboxes.append(np.concatenate((obbox, np.ones((len(obbox), 1))), 1))
+            labels.append(obj.get_name())
+            color = np.random.choice(range(256), size=3)
+            colors.append((int(color[0]), int(color[1]), int(color[2])))
+
+        imgs_projected = []
+        for img, pose in zip(imgs, poses):
+            imgs_projected.append(project_obbox_to_image(img, K, np.linalg.inv(pose), obboxes, labels, colors))
+
+        for i, img in enumerate(imgs_projected):
+            cv2.imwrite(os.path.join(os.path.join(dst_dir, 'overview'), 'proj_obb_{}.png'.format(i)), img)
+        
+
     if args.yichen:
         json_path = os.path.join(dst_dir, 'train/transforms.json')
         json_path_result = os.path.join(dst_dir, 'train/transforms.json')
