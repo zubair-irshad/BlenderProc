@@ -526,6 +526,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', type=str, default="1")
     parser.add_argument('--relabel', action='store_true', help='Relabel the objects in the scene by rewriting transforms.json.')
     parser.add_argument('--rotation', action='store_true', help = 'output rotation bounding boxes if it is true.')
+    
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
