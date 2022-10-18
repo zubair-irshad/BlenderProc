@@ -4,12 +4,12 @@ import blenderproc as bproc
 """
     Example commands:
 
-        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --plan
-        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --overview 
-        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render
-        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render -ppo 10 -gd 0.15
-        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render -ppo 0 -gp 5
-        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --render -nc
+        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --mode plan
+        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --mode overview 
+        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --mode render
+        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --mode render -ppo 10 -gd 0.15
+        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --mode render -ppo 0 -gp 5
+        python cli.py run ./scripts/render.py --gpu 3 -s 0 -r 0 --mode render -nc
 
 """
 
