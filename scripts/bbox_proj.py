@@ -83,7 +83,7 @@ def draw_bbox(img, pic_coords, color, label):
         font = ImageFont.truetype(r'/usr/share/fonts/truetype/freefont/FreeMono.ttf', 20)
         draw.text(pic_coords[0], label, color, font)
 
-def project_bbox_to_image(img, # PIL image
+def project_aabb_to_image(img, # PIL image
                           intrinsic_mat,  # [3x3]
                           pose,  # [4x4], world coord -> camera coord
                           aabb_codes,  # [Nx6]
@@ -99,7 +99,7 @@ def project_bbox_to_image(img, # PIL image
             draw_bbox(img_with_bbox, pic_coords, color, label)
     return img_with_bbox
 
-def project_obbox_to_image(img, # PIL image
+def project_obb_to_image(img, # PIL image
                           intrinsic_mat,  # [3x3]
                           pose,  # [4x4], world coord -> camera coord
                           obboxes,  # [Nx6]

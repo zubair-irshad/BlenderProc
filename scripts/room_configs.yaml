@@ -490,6 +490,7 @@
   0:
     bbox: [[-6.8, 0.6], [-2.5, 6.4]]
     merge_list:
+      # lighting: [lighting.005, lighting.004]
       lighting: [lighting, lighting.004, lighting.005, lighting.006, lighting.007]
 92:
   0:
