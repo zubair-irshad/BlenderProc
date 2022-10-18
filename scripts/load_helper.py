@@ -7,9 +7,13 @@ import re
 import bpy
 import json
 
-LAYOUT_DIR = '/data/yliugu/3D-FRONT'
-TEXTURE_DIR = '/data/yliugu/3D-FRONT-texture'
-MODEL_DIR = '/data/yliugu/3D-FUTURE-model'
+# LAYOUT_DIR = '/data/yliugu/3D-FRONT'
+# TEXTURE_DIR = '/data/yliugu/3D-FRONT-texture'
+# MODEL_DIR = '/data/yliugu/3D-FUTURE-model'
+
+LAYOUT_DIR = '/data2/jhuangce/3D-FRONT'
+TEXTURE_DIR = '/data2/jhuangce/3D-FRONT-texture'
+MODEL_DIR = '/data2/jhuangce/3D-FUTURE-model'
 
 RENDER_TEMP_DIR = './FRONT3D_render/temp'
 SCENE_LIST = []

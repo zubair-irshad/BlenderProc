@@ -83,7 +83,7 @@ def draw_bbox(img, pic_coords, color, label):
         font = ImageFont.truetype(r'/usr/share/fonts/truetype/freefont/FreeMono.ttf', 20)
         draw.text(pic_coords[0], label, color, font)
 
-def project_bbox_to_image(img, # PIL image
+def project_aabb_to_image(img, # PIL image
                           intrinsic_mat,  # [3x3]
                           pose,  # [4x4], world coord -> camera coord
                           aabb_codes,  # [Nx6]
@@ -95,6 +95,21 @@ def project_bbox_to_image(img, # PIL image
     for aabb_code, label, color in zip(aabb_codes, labels, colors):
         bbox_coords = get_aabb_coords(aabb_code)
         pic_coords, in_front = project(intrinsic_mat, pose, bbox_coords)
+        if in_front:
+            draw_bbox(img_with_bbox, pic_coords, color, label)
+    return img_with_bbox
+
+def project_obb_to_image(img, # PIL image
+                          intrinsic_mat,  # [3x3]
+                          pose,  # [4x4], world coord -> camera coord
+                          obboxes,  # [Nx6]
+                          labels, # [n x str]
+                          colors # a list of n tuples
+                          ):
+    """Project a list of bounding boxes to an image. Return the image wiht bounding boxes drawn. """
+    img_with_bbox = img.copy()
+    for obbox, label, color in zip(obboxes, labels, colors):
+        pic_coords, in_front = project(intrinsic_mat, pose, obbox)
         if in_front:
             draw_bbox(img_with_bbox, pic_coords, color, label)
     return img_with_bbox
