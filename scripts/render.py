@@ -561,10 +561,19 @@ def parse_args():
     parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses. Smaller global_density -> more global views')
     parser.add_argument('-nc', '--no_check', action='store_true', default=False, help='Do not check the poses. Render directly.')
     parser.add_argument('--gpu', type=str, default="1")
+    parser.add_argument('--relabel', action='store_true', help='Relabel the objects in the scene by rewriting transforms.json.')
+    parser.add_argument('--rotation', action='store_true', help = 'output rotation bounding boxes if it is true.')
     parser.add_argument('--bbox_type', type=str, default="aabb", choices=['aabb', 'obb'], help='Output aabb or obb')
     parser.add_argument('--render_root', type=str, default='./FRONT3D_render', help='Output directory. If not specified, use the default directory.')
     
+    args = parser.parse_args()
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+
+
+
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
