@@ -16,8 +16,9 @@ import blenderproc as bproc
 from random import shuffle
 import shutil
 import sys
-sys.path.append('/home/jhuangce/miniconda3/lib/python3.9/site-packages')
-sys.path.append('/home/yliugu/BlenderProc/scripts')
+# sys.path.append('/home/jhuangce/miniconda3/lib/python3.9/site-packages')
+# sys.path.append('/home/yliugu/BlenderProc/scripts')
+sys.path.append('./scripts')
 import cv2
 import os
 from os.path import join
@@ -25,8 +26,8 @@ import numpy as np
 
 import imageio
 import sys
-sys.path.append('/data/jhuangce/BlenderProc/scripts')
-sys.path.append('/data2/jhuangce/BlenderProc/scripts')
+# sys.path.append('/data/jhuangce/BlenderProc/scripts')
+# sys.path.append('/data2/jhuangce/BlenderProc/scripts')
 from floor_plan import *
 from load_helper import *
 from render_configs import *
@@ -38,6 +39,9 @@ from os.path import join
 import glob
 import argparse
 from mathutils import Vector, Matrix
+
+import pandas as pd
+from seg import build_segmentation_map
 
 
 pi = np.pi
@@ -258,15 +262,14 @@ def bbox_contained(bbox_a, bbox_b):
     return bbox_a[0][0]>=bbox_b[0][0] and bbox_a[0][1]>=bbox_b[0][1] and bbox_a[0][2]>=bbox_b[0][2] and \
            bbox_a[1][0]<=bbox_b[1][0] and bbox_a[1][1]<=bbox_b[1][1] and bbox_a[1][2]<=bbox_b[1][2]
 
-def get_room_objects(scene_idx, room_idx, scene_objects, cleanup=False):
+def get_room_objects(scene_objects, room_bbox, cleanup=False):
     """ Return the objects within the room bbox. Cleanup unecessary objects. """
     objects = []
 
-    room_bbox = get_room_bbox(scene_idx, room_idx, loaded_objects=scene_objects)
     for object in scene_objects:
-        obj_bbox_8 = object.get_bound_box()
-        obj_bbox = [np.min(obj_bbox_8, axis=0), np.max(obj_bbox_8, axis=0)]
-        if bbox_contained(obj_bbox, room_bbox):
+        obj_bbox = object.get_bound_box()
+        aabb = np.array([np.min(obj_bbox, axis=0), np.max(obj_bbox, axis=0)])
+        if bbox_contained(aabb, room_bbox):
             objects.append(object)
 
     return objects
@@ -418,6 +421,44 @@ def filter_objs_in_dict(scene_idx, room_idx, room_objs_dict):
 
     return room_objs_dict
 
+
+def filter_room_objects(scene_idx, room_idx, room_objs):
+    for obj in room_objs:
+        obj.set_cp('instance_name', obj.get_name())
+
+    if 'merge_list' in ROOM_CONFIG[scene_idx][room_idx]:
+        merge_dict = ROOM_CONFIG[scene_idx][room_idx]['merge_list']
+        for merged_label, merge_items in merge_dict.items():
+            # select objs to be merged
+            objs_to_be_merged = [obj for obj in room_objs if obj.get_name() in merge_items]
+            for obj in objs_to_be_merged:
+                obj.set_cp('instance_name', merged_label)
+
+    result_objects = []
+    for obj in room_objs:
+        obj_name = obj.get_cp('instance_name')
+        flag_use = True
+        # check global OBJ_BAN_LIST
+        for ban_word in OBJ_BAN_LIST:
+            if ban_word in obj_name:
+                flag_use=False
+        # check keyword_ban_list
+        if 'keyword_ban_list' in ROOM_CONFIG[scene_idx][room_idx].keys():
+            for ban_word in ROOM_CONFIG[scene_idx][room_idx]['keyword_ban_list']:
+                if ban_word in obj_name:
+                    flag_use=False
+        # check fullname_ban_list
+        if 'fullname_ban_list' in ROOM_CONFIG[scene_idx][room_idx].keys():
+            for fullname in ROOM_CONFIG[scene_idx][room_idx]['fullname_ban_list']:
+                if fullname == obj_name.strip():
+                    flag_use=False
+        
+        if flag_use:
+            result_objects.append(obj)
+    
+    return result_objects
+
+
 def render_poses(poses, temp_dir=RENDER_TEMP_DIR) -> List:
     """ Render a scene with a list of poses. 
         No room idx is needed because the poses can be anywhere in the room. """
@@ -551,11 +592,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('-s', '--scene_idx', type=int, required=True)
     parser.add_argument('-r', '--room_idx', type=int, required=True)
-    parser.add_argument('--mode', type=str, choices=['plan', 'overview', 'render', 'bbox'], 
+    parser.add_argument('--mode', type=str, choices=['plan', 'overview', 'render', 'bbox', 'seg'], 
                         help="plan: Generate the floor plan of the scene. \
                               overview:Generate 4 corner overviews with bbox projected. \
                               render: Render images in the scene. \
-                              bbox: Overwrite bboxes by regenerating transforms.json.")
+                              bbox: Overwrite bboxes by regenerating transforms.json."
+                              "\nseg: Create 3D semantic/instance segmentation map.")
     parser.add_argument('-ppo', '--pos_per_obj', type=int, default=15, help='Number of close-up poses for each object.')
     parser.add_argument('-gp', '--max_global_pos', type=int, default=150, help='Max number of global poses.')
     parser.add_argument('-gd', '--global_density', type=float, default=0.15, help='The radius interval of global poses. Smaller global_density -> more global views')
@@ -565,6 +607,11 @@ def parse_args():
     parser.add_argument('--rotation', action='store_true', help = 'output rotation bounding boxes if it is true.')
     parser.add_argument('--bbox_type', type=str, default="aabb", choices=['aabb', 'obb'], help='Output aabb or obb')
     parser.add_argument('--render_root', type=str, default='./FRONT3D_render', help='Output directory. If not specified, use the default directory.')
+
+    parser.add_argument('--seg_res', type=int, default=160, help='The max grid resolution for 3D segmentation map.')
+    parser.add_argument('--mapping_path', type=str, 
+                        default='./blenderproc/resources/front_3D/3D_front_nyu_mapping.csv', 
+                        help='The mapping file for 3D segmentation map.')
     
     args = parser.parse_args()
 
@@ -681,6 +728,14 @@ def main():
         with open(json_path_result, 'w') as f:
             json.dump(meta, f, indent=4)
 
+    elif args.mode == 'seg':
+        room_objs = get_room_objects(scene_objects, room_bbox)
+        room_objs = filter_room_objects(args.scene_idx, args.room_idx, room_objs)
+        print('Number of objects in the room: ', len(room_objs))
+
+        ins_map, res, id_map = build_segmentation_map(room_objs, room_bbox, args.seg_res)
+        np.savez(os.path.join(dst_dir, 'seg.npz'), 
+                 ins_map=ins_map, res=res, id_map=id_map)
 
 
 if __name__ == '__main__':
