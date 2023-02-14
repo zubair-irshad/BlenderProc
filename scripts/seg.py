@@ -45,14 +45,9 @@ def build_segmentation_map(room_objs, room_bbox, max_res, res=None):
         res = np.floor(res).astype(np.int32)
 
     instance_map = np.zeros(res, dtype=np.uint8)     # instance id overflow?
-    id_map = {}
 
     for obj in tqdm(room_objs):
-        name = obj.get_cp('instance_name')
-        if name not in id_map:
-            id_map[name] = len(id_map) + 1
-
-        id = id_map[name]
+        id = obj.get_cp('instance_id')
         bbox = obj.get_bound_box()
         aabb = np.array([np.min(bbox, axis=0), np.max(bbox, axis=0)])
         # print(f'{obj.get_name()} bbox: {aabb}')
@@ -79,7 +74,7 @@ def build_segmentation_map(room_objs, room_bbox, max_res, res=None):
 
                     instance_map[i, j, k] = id
 
-    return instance_map, res, id_map
+    return instance_map, res
 
 
 def build_metadata(id_map, room_obj_dict):

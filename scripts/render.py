@@ -423,9 +423,11 @@ def filter_objs_in_dict(scene_idx, room_idx, room_objs_dict):
     return room_objs_dict
 
 
+# For metadata and 2D/3D mask generation
 def filter_room_objects(scene_idx, room_idx, room_objs):
     for obj in room_objs:
         obj.set_cp('instance_name', obj.get_name())
+        obj.set_cp('instance_id', 0)
 
     if 'merge_list' in ROOM_CONFIG[scene_idx][room_idx]:
         merge_dict = ROOM_CONFIG[scene_idx][room_idx]['merge_list']
@@ -456,8 +458,15 @@ def filter_room_objects(scene_idx, room_idx, room_objs):
         
         if flag_use:
             result_objects.append(obj)
+
+    id_map = {}
+    for obj in result_objects:
+        obj_name = obj.get_cp('instance_name')
+        if obj_name not in id_map:
+            id_map[obj_name] = len(id_map) + 1
+        obj.set_cp('instance_id', id_map[obj_name])
     
-    return result_objects
+    return result_objects, id_map
 
 
 def render_poses(poses, temp_dir=RENDER_TEMP_DIR) -> List:
@@ -610,6 +619,8 @@ def parse_args():
     parser.add_argument('--render_root', type=str, default='./FRONT3D_render', help='Output directory. If not specified, use the default directory.')
 
     parser.add_argument('--seg_res', type=int, default=256, help='The max grid resolution for 3D segmentation map.')
+    parser.add_argument('--pose_dir', type=str, default='', 
+                        help='The directory containing the poses (transforms.json) for 2D mask rendering.')
     
     args = parser.parse_args()
 
@@ -728,7 +739,7 @@ def main():
 
     elif args.mode == 'seg':
         room_objs = get_room_objects(scene_objects, room_bbox)
-        room_objs = filter_room_objects(args.scene_idx, args.room_idx, room_objs)
+        room_objs, id_map = filter_room_objects(args.scene_idx, args.room_idx, room_objs)
         print('Number of objects in the room: ', len(room_objs))
 
         data_path = os.path.join('/data/bhuai/3dfront_rpn_data/features_256',
@@ -740,7 +751,7 @@ def main():
         res = res[[2, 0, 1]]
         res = res.astype(np.int32)
 
-        # ins_map, res, id_map = build_segmentation_map(room_objs, room_bbox, args.seg_res, res)
+        # ins_map, res = build_segmentation_map(room_objs, room_bbox, args.seg_res, res)
         metadata = build_metadata(id_map, room_objs_dict)
         
         mask_dir = os.path.join(args.render_root, 'masks')
@@ -754,6 +765,22 @@ def main():
         # np.save(os.path.join(mask_dir, scene_name + '.npy'), ins_map)
         with open(os.path.join(metadata_dir, scene_name + '.json'), 'w') as f:
             json.dump(metadata, f, indent=2)
+
+        # Render 2D segmentation masks
+        poses_file = os.path.join(args.pose_dir, scene_name, 'train', 'transforms.json')
+        with open(poses_file) as f:
+            data = json.load(f)
+            for frame in data['frames']:
+                pose = np.array(frame['transform_matrix'])
+                bproc.camera.add_camera_pose(pose)
+    
+        bproc.camera.set_intrinsics_from_K_matrix(K, IMG_WIDTH, IMG_HEIGHT)
+        data = bproc.renderer.render_segmap(map_by=['instance', 'cp_instance_id'], 
+                                            default_values={'cp_instance_id': 0})
+        
+        seg_dir = os.path.join(args.render_root, 'seg', scene_name)
+        os.makedirs(seg_dir, exist_ok=True)
+        bproc.writer.write_hdf5(seg_dir, data)
 
 
 if __name__ == '__main__':
