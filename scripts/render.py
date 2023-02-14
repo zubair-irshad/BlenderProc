@@ -41,7 +41,7 @@ import argparse
 from mathutils import Vector, Matrix
 
 import pandas as pd
-from seg import build_segmentation_map
+from seg import build_segmentation_map, build_metadata
 
 
 pi = np.pi
@@ -333,6 +333,7 @@ def merge_bbox_in_dict(scene_idx, room_idx, room_objs_dict):
                             update[1][i] = 1
             
             # TODO: update: coords, aabb, volume, coords_local
+            # TODO: Compute real aabb by creating parent object
             merged_local_mins, merged_local_maxs = local_offsets + local_cent
             merged_coords_local = get_aabb_coords(np.concatenate([merged_local_mins, merged_local_maxs], axis=0))[:, :3]
             merged_coords = np.array([local2world @ Vector(cord) for cord in merged_coords_local])
@@ -608,10 +609,7 @@ def parse_args():
     parser.add_argument('--bbox_type', type=str, default="aabb", choices=['aabb', 'obb'], help='Output aabb or obb')
     parser.add_argument('--render_root', type=str, default='./FRONT3D_render', help='Output directory. If not specified, use the default directory.')
 
-    parser.add_argument('--seg_res', type=int, default=160, help='The max grid resolution for 3D segmentation map.')
-    parser.add_argument('--mapping_path', type=str, 
-                        default='./blenderproc/resources/front_3D/3D_front_nyu_mapping.csv', 
-                        help='The mapping file for 3D segmentation map.')
+    parser.add_argument('--seg_res', type=int, default=256, help='The max grid resolution for 3D segmentation map.')
     
     args = parser.parse_args()
 
@@ -733,9 +731,29 @@ def main():
         room_objs = filter_room_objects(args.scene_idx, args.room_idx, room_objs)
         print('Number of objects in the room: ', len(room_objs))
 
-        ins_map, res, id_map = build_segmentation_map(room_objs, room_bbox, args.seg_res)
-        np.savez(os.path.join(dst_dir, 'seg.npz'), 
-                 ins_map=ins_map, res=res, id_map=id_map)
+        data_path = os.path.join('/data/bhuai/3dfront_rpn_data/features_256',
+                                 f'3dfront_{args.scene_idx:04d}_{args.room_idx:02d}.npz')
+        if not os.path.exists(data_path):
+            return
+        data = np.load(data_path)
+        res = data['resolution']
+        res = res[[2, 0, 1]]
+        res = res.astype(np.int32)
+
+        # ins_map, res, id_map = build_segmentation_map(room_objs, room_bbox, args.seg_res, res)
+        metadata = build_metadata(id_map, room_objs_dict)
+        
+        mask_dir = os.path.join(args.render_root, 'masks')
+        os.makedirs(mask_dir, exist_ok=True)
+        metadata_dir = os.path.join(args.render_root, 'metadata')
+        os.makedirs(metadata_dir, exist_ok=True)
+
+        scene_name = f'3dfront_{args.scene_idx:04d}_{args.room_idx:02d}'
+        metadata['scene_name'] = scene_name
+
+        # np.save(os.path.join(mask_dir, scene_name + '.npy'), ins_map)
+        with open(os.path.join(metadata_dir, scene_name + '.json'), 'w') as f:
+            json.dump(metadata, f, indent=2)
 
 
 if __name__ == '__main__':

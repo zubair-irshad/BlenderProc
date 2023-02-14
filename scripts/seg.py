@@ -4,6 +4,7 @@ import bpy
 import bmesh
 import mathutils
 from tqdm import tqdm
+from utils import poly2obb_3d
 
 
 def get_sdf(mesh, xform):
@@ -22,7 +23,7 @@ def get_sdf(mesh, xform):
     return sdf
 
 
-def build_segmentation_map(room_objs, room_bbox, max_res):
+def build_segmentation_map(room_objs, room_bbox, max_res, res=None):
     """Builds a segmentation map of the room.
 
     Args:
@@ -39,8 +40,9 @@ def build_segmentation_map(room_objs, room_bbox, max_res):
     # print(f'room bbox: {room_bbox}')
 
     diag = np.array(room_bbox[1]) - np.array(room_bbox[0])
-    res = diag / diag.max() * max_res
-    res = np.ceil(res).astype(np.int32)
+    if res is None:
+        res = diag / diag.max() * max_res
+        res = np.floor(res).astype(np.int32)
 
     instance_map = np.zeros(res, dtype=np.uint8)     # instance id overflow?
     id_map = {}
@@ -78,3 +80,43 @@ def build_segmentation_map(room_objs, room_bbox, max_res):
                     instance_map[i, j, k] = id
 
     return instance_map, res, id_map
+
+
+def build_metadata(id_map, room_obj_dict):
+    """Builds metadata of the room.
+
+    Args:
+        id_map (dict): A mapping from instance name to segmentation id.
+        room_obj_dict (dict): Dictionary of objects in the room.
+
+    Returns:
+        (dict): Dictionary of the room metadata.
+    """
+
+    metadata = {}
+    metadata['scene_bbox'] = room_obj_dict['bbox'].flatten().tolist()
+
+    room_objs = room_obj_dict['objects']
+    name2objs = {x['name']: x for x in room_objs}
+
+    metadata['instances'] = []
+    for name, id in id_map.items():
+        if name not in name2objs:
+            raise ValueError(f'Object {name} not found in room_obj_dict.')
+
+        obj = name2objs[name]
+
+        if obj['volume'] < 1e-6:
+            print(f'Warning: {name} has volume {obj["volume"]} and is ignored.')
+            continue
+
+        obj_data = {
+            'name': name,
+            'id': id,
+            'aabb': obj['aabb'].flatten().tolist(),
+            'obb': poly2obb_3d(obj['coords']).tolist(),
+        }
+
+        metadata['instances'].append(obj_data)
+
+    return metadata
