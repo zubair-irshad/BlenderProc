@@ -602,7 +602,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('-s', '--scene_idx', type=int, required=True)
     parser.add_argument('-r', '--room_idx', type=int, required=True)
-    parser.add_argument('--mode', type=str, choices=['plan', 'overview', 'render', 'bbox', 'seg'], 
+    parser.add_argument('--mode', type=str, choices=['plan', 'overview', 'render', 'bbox', 'seg', 'depth'], 
                         help="plan: Generate the floor plan of the scene. \
                               overview:Generate 4 corner overviews with bbox projected. \
                               render: Render images in the scene. \
@@ -781,6 +781,30 @@ def main():
         seg_dir = os.path.join(args.render_root, 'seg', scene_name)
         os.makedirs(seg_dir, exist_ok=True)
         bproc.writer.write_hdf5(seg_dir, data)
+
+    elif args.mode == 'depth':
+        # Render depth images
+        scene_name = f'3dfront_{args.scene_idx:04d}_{args.room_idx:02d}'
+        poses_file = os.path.join(args.pose_dir, scene_name, 'train', 'transforms.json')
+        with open(poses_file) as f:
+            data = json.load(f)
+            for frame in data['frames']:
+                pose = np.array(frame['transform_matrix'])
+                bproc.camera.add_camera_pose(pose)
+    
+        bproc.camera.set_intrinsics_from_K_matrix(K, IMG_WIDTH, IMG_HEIGHT)
+
+        bproc.renderer.set_max_amount_of_samples(1)
+        bproc.renderer.set_noise_threshold(0)
+        bproc.renderer.set_denoiser(None)
+        bproc.renderer.set_light_bounces(1, 0, 0, 1, 0, 8, 0)
+        bproc.renderer.enable_depth_output(activate_antialiasing=False)
+
+        data = bproc.renderer.render()
+        
+        depth_dir = os.path.join(args.render_root, 'depth', scene_name)
+        os.makedirs(depth_dir, exist_ok=True)
+        bproc.writer.write_hdf5(depth_dir, {'depth': data['depth']})
 
 
 if __name__ == '__main__':

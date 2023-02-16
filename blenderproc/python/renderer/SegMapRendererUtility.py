@@ -193,7 +193,7 @@ def render_segmap(output_dir: Optional[str] = None, temp_dir: Optional[str] = No
                             else:
                                 save_in_csv_attributes[object_id] = {attribute: value}
                                 
-                    if was_used and num_default_values < len(object_ids):
+                    if was_used:
                         channels.append(org_attribute)
                         combined_result_map.append(resulting_map)
                         return_dict.setdefault("{}_segmaps{}".format(org_attribute, suffix), []).append(resulting_map)

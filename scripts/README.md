@@ -14,6 +14,18 @@
   pip install blenderproc
   ```
 
+## Steps for generating depth images, point clouds, and 2D/3D instance segmentation masks
+1. Run the following to get metadata json and 2D segmentation masks.
+   ``` bash
+   python cli.py run ./scripts/render.py -s xxx -r xxx --mode seg --seg_res max_res --pose_dir path/to/ngp/xforms
+   ```
+2. Run the following to get depth images.
+   ``` bash
+   python cli.py run ./scripts/render.py -s xxx -r xxx --mode depth --pose_dir path/to/ngp/xforms
+   ```
+3. Run `python scripts/front3d_depth2pc.py` to generate point clouds.
+4. Run `python scripts/voxelize.py` to generate 3D masks.
+
 ## Steps for rendering 3DFRONT
 1. Generate the floor plan of a new scene. \
    Run the following command to generate the floor plan of scene 25. For convenience you can specify the room number by `-r 0` even though you haven't configure any room in this scene. (You will configure rooms in the next step.)
