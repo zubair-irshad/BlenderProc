@@ -5,6 +5,9 @@ import bmesh
 import mathutils
 from tqdm import tqdm
 from utils import poly2obb_3d
+import json
+
+MODEL_INFO_PATH = '/data/bhuai/3D-FUTURE-model/model_info.json'
 
 
 def get_sdf(mesh, xform):
@@ -77,7 +80,7 @@ def build_segmentation_map(room_objs, room_bbox, max_res, res=None):
     return instance_map, res
 
 
-def build_metadata(id_map, room_obj_dict):
+def build_metadata(id_map, room_obj_dict, room_objs):
     """Builds metadata of the room.
 
     Args:
@@ -87,6 +90,13 @@ def build_metadata(id_map, room_obj_dict):
     Returns:
         (dict): Dictionary of the room metadata.
     """
+
+    with open(MODEL_INFO_PATH, 'r') as f:
+        model_info = json.load(f)
+
+    uid2info = {x['model_id']: x for x in model_info}
+    name2jid = {obj.get_cp('instance_name'): obj.get_cp('jid') for obj in room_objs if obj.has_cp('jid')}
+    name2uid = {obj.get_cp('instance_name'): obj.get_cp('uid') for obj in room_objs if obj.has_cp('uid')}
 
     metadata = {}
     metadata['scene_bbox'] = room_obj_dict['bbox'].flatten().tolist()
@@ -105,11 +115,25 @@ def build_metadata(id_map, room_obj_dict):
             print(f'Warning: {name} has volume {obj["volume"]} and is ignored.')
             continue
 
+        if name not in name2jid:
+            print(f'Warning: {name} has no jid and is ignored.')
+            continue
+
+        if name not in name2uid:
+            print(f'Warning: {name} has no uid and is ignored.')
+            continue
+
+        info = uid2info[name2jid[name]]
+
         obj_data = {
             'name': name,
             'id': id,
             'aabb': obj['aabb'].flatten().tolist(),
             'obb': poly2obb_3d(obj['coords']).tolist(),
+            'uid': name2uid[name],
+            'jid': name2jid[name],
+            'super-category': info['super-category'],
+            'category': info['category'],
         }
 
         metadata['instances'].append(obj_data)

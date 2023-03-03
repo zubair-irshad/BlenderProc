@@ -752,7 +752,7 @@ def main():
         res = res.astype(np.int32)
 
         # ins_map, res = build_segmentation_map(room_objs, room_bbox, args.seg_res, res)
-        metadata = build_metadata(id_map, room_objs_dict)
+        metadata = build_metadata(id_map, room_objs_dict, room_objs)
         
         mask_dir = os.path.join(args.render_root, 'masks')
         os.makedirs(mask_dir, exist_ok=True)
