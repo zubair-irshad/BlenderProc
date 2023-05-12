@@ -1,4 +1,6 @@
-from pysdf import SDF
+import blenderproc as bproc
+
+# from pysdf import SDF
 import numpy as np
 import bpy
 import bmesh
@@ -7,7 +9,7 @@ from tqdm import tqdm
 from utils import poly2obb_3d
 import json
 
-MODEL_INFO_PATH = '/data/bhuai/3D-FUTURE-model/model_info.json'
+MODEL_INFO_PATH = "/wild6d_data/zubair/3DFRONT_Raw/3D-FUTURE-model/model_info.json"
 
 
 def get_sdf(mesh, xform):
@@ -47,10 +49,10 @@ def build_segmentation_map(room_objs, room_bbox, max_res, res=None):
         res = diag / diag.max() * max_res
         res = np.floor(res).astype(np.int32)
 
-    instance_map = np.zeros(res, dtype=np.uint8)     # instance id overflow?
+    instance_map = np.zeros(res, dtype=np.uint8)  # instance id overflow?
 
     for obj in tqdm(room_objs):
-        id = obj.get_cp('instance_id')
+        id = obj.get_cp("instance_id")
         bbox = obj.get_bound_box()
         aabb = np.array([np.min(bbox, axis=0), np.max(bbox, axis=0)])
         # print(f'{obj.get_name()} bbox: {aabb}')
@@ -68,9 +70,9 @@ def build_segmentation_map(room_objs, room_bbox, max_res, res=None):
 
         mesh = obj.get_mesh()
         sdf = get_sdf(mesh, obj.get_local2world_mat())
-        for i in range(x_start, x_end+1):
-            for j in range(y_start, y_end+1):
-                for k in range(z_start, z_end+1):
+        for i in range(x_start, x_end + 1):
+            for j in range(y_start, y_end + 1):
+                for k in range(z_start, z_end + 1):
                     point = np.array([xs[i], ys[j], zs[k]])
                     if not sdf.contains(point):
                         continue
@@ -91,51 +93,59 @@ def build_metadata(id_map, room_obj_dict, room_objs):
         (dict): Dictionary of the room metadata.
     """
 
-    with open(MODEL_INFO_PATH, 'r') as f:
+    with open(MODEL_INFO_PATH, "r") as f:
         model_info = json.load(f)
 
-    uid2info = {x['model_id']: x for x in model_info}
-    name2jid = {obj.get_cp('instance_name'): obj.get_cp('jid') for obj in room_objs if obj.has_cp('jid')}
-    name2uid = {obj.get_cp('instance_name'): obj.get_cp('uid') for obj in room_objs if obj.has_cp('uid')}
+    uid2info = {x["model_id"]: x for x in model_info}
+    name2jid = {
+        obj.get_cp("instance_name"): obj.get_cp("jid")
+        for obj in room_objs
+        if obj.has_cp("jid")
+    }
+    name2uid = {
+        obj.get_cp("instance_name"): obj.get_cp("uid")
+        for obj in room_objs
+        if obj.has_cp("uid")
+    }
 
     metadata = {}
-    metadata['scene_bbox'] = room_obj_dict['bbox'].flatten().tolist()
+    metadata["scene_bbox"] = room_obj_dict["bbox"].flatten().tolist()
 
-    room_objs = room_obj_dict['objects']
-    name2objs = {x['name']: x for x in room_objs}
+    room_objs = room_obj_dict["objects"]
+    name2objs = {x["name"]: x for x in room_objs}
 
-    metadata['instances'] = []
+    metadata["instances"] = []
     for name, id in id_map.items():
         if name not in name2objs:
-            raise ValueError(f'Object {name} not found in room_obj_dict.')
+            raise ValueError(f"Object {name} not found in room_obj_dict.")
 
         obj = name2objs[name]
 
-        if obj['volume'] < 1e-6:
+        if obj["volume"] < 1e-6:
             print(f'Warning: {name} has volume {obj["volume"]} and is ignored.')
             continue
 
         if name not in name2jid:
-            print(f'Warning: {name} has no jid and is ignored.')
+            print(f"Warning: {name} has no jid and is ignored.")
             continue
 
         if name not in name2uid:
-            print(f'Warning: {name} has no uid and is ignored.')
+            print(f"Warning: {name} has no uid and is ignored.")
             continue
 
         info = uid2info[name2jid[name]]
 
         obj_data = {
-            'name': name,
-            'id': id,
-            'aabb': obj['aabb'].flatten().tolist(),
-            'obb': poly2obb_3d(obj['coords']).tolist(),
-            'uid': name2uid[name],
-            'jid': name2jid[name],
-            'super-category': info['super-category'],
-            'category': info['category'],
+            "name": name,
+            "id": id,
+            "aabb": obj["aabb"].flatten().tolist(),
+            "obb": poly2obb_3d(obj["coords"]).tolist(),
+            "uid": name2uid[name],
+            "jid": name2jid[name],
+            "super-category": info["super-category"],
+            "category": info["category"],
         }
 
-        metadata['instances'].append(obj_data)
+        metadata["instances"].append(obj_data)
 
     return metadata
