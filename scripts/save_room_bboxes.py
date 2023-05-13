@@ -4,6 +4,14 @@ import sys
 from os.path import join
 import yaml
 import os
+import json
+import argparse
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument("--scene_idx", type=int, required=True)
+
 
 sys.path.append("./scripts")
 from blenderproc.python.sampler.Front3DPointInRoomSampler import (
@@ -54,33 +62,44 @@ construct_scene_list()
 
 room_bboxes = {}
 
-for scene_idx in range(30):
-    # scene_idx = 14
-    loaded_objects = load_scene_objects_wotexture(scene_idx)
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument("--scene_idx", type=int, required=True)
+    return parser.parse_args()
+
+
+def save_bbox(idx):
+    # for idx in range(30):
+    # scene_idx = 13
+    loaded_objects = load_scene_objects_wotexture(idx)
     point_sampler = Front3DPointInRoomSampler(loaded_objects)
-    if len(point_sampler.used_floors) > 0:
-        room_bboxes[scene_idx] = []
-        # room_bboxes[scene_idx] = {}
-        for i in range(len(point_sampler.used_floors)):
-            floor_obj = point_sampler.used_floors[i]
+    floors = point_sampler.used_floors
+    if len(floors) > 0:
+        # room_bboxes[scene_idx] = []
+        room_bboxes[idx] = {}
+        for i, floor_obj in enumerate(floors):
+            # floor_obj = point_sampler.used_floors[i]
             bounding_box = floor_obj.get_bound_box()
             min_corner = np.min(bounding_box, axis=0)
             max_corner = np.max(bounding_box, axis=0)
 
-            # room_bboxes[scene_idx][i] = {
-            #     "bbox": [min_corner[:2].tolist(), max_corner[:2].tolist()]
-            # }
-            room_bboxes[scene_idx].append(
-                [min_corner[:2].tolist(), max_corner[:2].tolist()]
-            )
-            # room_bboxes[scene_idx][i] = {
-            #     "bbox": [min_corner[:2].tolist(), max_corner[:2].tolist()]
-            # }
-    del point_sampler
-    del loaded_objects
+            room_bboxes[idx][i] = {
+                "bbox": [min_corner[:2].tolist(), max_corner[:2].tolist()]
+            }
+        save_path = os.path.join(
+            "/home/mirshad7/BlenderProc/scripts/all_bboxes",
+            "bbox_" + str(idx) + ".yaml",
+        )
+        with open(save_path, "w") as file:
+            yaml.dump(room_bboxes, file)
 
-    # print("bounding box", bounding_box)
-    # print("min_corner, max_corner,", i, ":::", min_corner, max_corner)
 
-with open("/home/mirshad7/BlenderProc/scripts/room_bboxes_modified.yaml", "w") as file:
-    yaml.dump(room_bboxes, file)
+def main():
+    args = parse_args()
+    save_bbox(args.scene_idx)
+
+
+if __name__ == "__main__":
+    main()
+    print("Success.")
