@@ -66,7 +66,7 @@ def main():
         scene_room_subset = scene_lists[start:end]
 
         # Construct the command to run
-        command = ["python", "cli.py", "run", "./scripts/render.py"]
+        command = ["python", "cli.py", "run", "./scripts/render_scene.py"]
         for scene_room in scene_room_subset:
             command += [
                 "-s",
