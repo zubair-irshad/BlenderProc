@@ -45,7 +45,7 @@ def main():
                 for room_idx in r_config[scene_idx]:
                     scene_lists.append([scene_idx, room_idx])
 
-    worker_per_gpu = 10
+    worker_per_gpu = 1
     workers = torch.cuda.device_count() * worker_per_gpu
     print("workers", workers)
     all_frames = range(0, len(scene_lists))
