@@ -31,5 +31,5 @@ ROOM_CONFIG = {}
 # with open('./scripts/room_configs.yaml', 'r') as f:
 #     ROOM_CONFIG = yaml.load(f, Loader=yaml.FullLoader)
 
-with open("./scripts/room_bboxes.yaml", "r") as f:
-    ROOM_CONFIG = yaml.load(f, Loader=yaml.FullLoader)
+# with open("./scripts/room_bboxes.yaml", "r") as f:
+#     ROOM_CONFIG = yaml.load(f, Loader=yaml.FullLoader)

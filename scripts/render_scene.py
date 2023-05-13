@@ -289,8 +289,8 @@ def get_room_bbox(scene_idx, room_idx, scene_objects=None, scene_objs_dict=None)
     scene_min, scene_max = get_scene_bbox(scene_objects, scene_objs_dict)
     room_config = ROOM_CONFIG[scene_idx][room_idx]
     # overwrite width and length with room config
-    # scene_min[:2] = room_config["bbox"][0]
-    # scene_max[:2] = room_config["bbox"][1]
+    scene_min[:2] = room_config["bbox"][0]
+    scene_max[:2] = room_config["bbox"][1]
 
     return [scene_min, scene_max]
 
@@ -755,7 +755,7 @@ def parse_args():
     parser.add_argument(
         "--render_root",
         type=str,
-        default="./FRONT3D_render",
+        default="/wild6d_data/zubair/FRONT3D_render",
         help="Output directory. If not specified, use the default directory.",
     )
 
@@ -782,6 +782,13 @@ def parse_args():
 def main():
     args = parse_args()
 
+    room_config_folder = "./scripts/all_bboxes"
+    room_config_path = os.path.join(
+        room_config_folder, "bboxes_" + str(args.scene_idx) + ".yaml"
+    )
+
+    with open(room_config_path, "r") as f:
+        ROOM_CONFIG = yaml.load(f, Loader=yaml.FullLoader)
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
     dst_dir = join(
