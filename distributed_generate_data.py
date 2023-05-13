@@ -1,16 +1,12 @@
 import os
-import sys
-import argparse
 import math
-from subprocess import Popen, PIPE
 import torch
 import yaml
-import multiprocessing as mp
 import subprocess
 
 
 # Define a function to run the command
-def run_command(scene_idx, room_idx, gpu):
+def get_command(scene_idx, room_idx, gpu):
     command = [
         "python",
         "cli.py",
@@ -25,12 +21,15 @@ def run_command(scene_idx, room_idx, gpu):
         "--gpu",
         str(gpu),
     ]
-    subprocess.Popen(command).wait()
+    return command
+    # subprocess.Popen(command).wait()
 
 
 def main():
     # Create a pool of processes, one for each worker
 
+    log_dir = "./scripts/logs"
+    os.makedirs(log_dir, exist_ok=True)
     path = "./scripts/all_bboxes"
 
     start_scene_idx = 2000
@@ -48,11 +47,10 @@ def main():
 
     worker_per_gpu = 20
     workers = torch.cuda.device_count() * worker_per_gpu
-    pool = mp.Pool(processes=workers)
     all_frames = range(0, len(scene_lists))
     frames_per_worker = math.ceil(len(all_frames) / workers)
     gpu_start = 2
-
+    processes = []
     for i in range(workers):
         curr_gpu = (i // worker_per_gpu) + gpu_start
 
@@ -66,17 +64,30 @@ def main():
         # Select a subset of scene_idx and room_idx for this worker
         scene_room_subset = scene_lists[start:end]
 
-        # Create a list of arguments for the run_command function
-        args_list = [
-            (scene_idx, room_idx, curr_gpu) for scene_idx, room_idx in scene_room_subset
-        ]
+        # Construct the command to run
+        command = ["python", "cli.py", "run", "./scripts/render.py"]
+        for scene_room in scene_room_subset:
+            command += [
+                "-scene_idx",
+                str(scene_room[0]),
+                "-room_idx",
+                str(scene_room[1]),
+                "--mode",
+                "render",
+                "--gpu",
+                str(curr_gpu),
+            ]
 
-        # Run the commands in parallel
-        pool.starmap(run_command, args_list)
-
-    # Close the pool of processes
-    pool.close()
-    pool.join()
+        # Spawn a process to run the command
+        log_file = os.path.join(log_dir, f"log_{i}.txt")
+        log = open(log_file, "w")
+        env = os.environ.copy()
+        env["CUDA_VISIBLE_DEVICES"] = str(curr_gpu)
+        p = subprocess.Popen(command, env=env, stderr=log, stdout=log)
+        processes.append(p)
+    # Wait for all the processes to finish
+    for p in processes:
+        p.wait()
 
 
 if __name__ == "__main__":
