@@ -11,9 +11,13 @@ import json
 # TEXTURE_DIR = '/data/yliugu/3D-FRONT-texture'
 # MODEL_DIR = '/data/yliugu/3D-FUTURE-model'
 
-LAYOUT_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT"
-TEXTURE_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT-texture"
-MODEL_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FUTURE-model"
+# LAYOUT_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT"
+# TEXTURE_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT-texture"
+# MODEL_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FUTURE-model"
+
+LAYOUT_DIR = "/home/mirshad7/Downloads/3D-FRONT"
+TEXTURE_DIR = "/home/mirshad7/Downloads/3D-FRONT-texture"
+MODEL_DIR = "/home/mirshad7/Downloads/3D-FUTURE-model"
 
 RENDER_TEMP_DIR = "./FRONT3D_render/temp"
 SCENE_LIST = []
@@ -70,22 +74,28 @@ def get_scene_bbox_meta(scene_idx, overwrite=False):
         names = []
         bbox_mins = []
         bbox_maxs = []
+
+        print("=============================================\n\n\n\n")
+        print("OBJECTSSSSSS")
         for i in range(len(loaded_objects)):
             object = loaded_objects[i]
             name = object.get_name()
+            print("name", name)
             bbox = object.get_bound_box()
-
+            print("bbox", bbox)
             bbox_min = np.min(bbox, axis=0)
             bbox_max = np.max(bbox, axis=0)
             names.append(name)
             bbox_mins.append(bbox_min)
             bbox_maxs.append(bbox_max)
 
+        print("==================================================\n\n\n\n")
+
         np.save(f"./cached/{scene_idx}/names.npy", names)
         np.save(f"./cached/{scene_idx}/bbox_mins.npy", bbox_mins)
         np.save(f"./cached/{scene_idx}/bbox_maxs.npy", bbox_maxs)
 
-    return names, bbox_mins, bbox_maxs
+    return names, bbox_mins, bbox_maxs, loaded_objects
 
 
 def add_texture(obj: MeshObject, tex_path):
