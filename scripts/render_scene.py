@@ -168,6 +168,7 @@ def generate_room_poses(
     num_poses_per_object,
     max_global_pos,
     global_density,
+    room_config,
 ):
     """Return a list of poses including global poses and close-up poses for each object."""
 
@@ -221,7 +222,7 @@ def generate_room_poses(
 
     # global poses
     if max_global_pos > 0:
-        bbox = ROOM_CONFIG[scene_idx][room_idx]["bbox"]
+        bbox = room_config[scene_idx][room_idx]["bbox"]
         x1, y1, x2, y2 = bbox[0][0], bbox[0][1], bbox[1][0], bbox[1][1]
         rm_cent = np.array([(x1 + x2) / 2, (y1 + y2) / 2, h_global])
 
@@ -283,14 +284,16 @@ def get_scene_bbox(loaded_objects=None, scene_objs_dict=None):
         raise ValueError("Either loaded_objects or scene_objs_dict should be provided.")
 
 
-def get_room_bbox(scene_idx, room_idx, scene_objects=None, scene_objs_dict=None):
+def get_room_bbox(
+    scene_idx, room_idx, scene_objects=None, scene_objs_dict=None, room_config=None
+):
     """Return the bounding box of the room."""
     # get global height
     scene_min, scene_max = get_scene_bbox(scene_objects, scene_objs_dict)
-    room_config = ROOM_CONFIG[scene_idx][room_idx]
+    room_config_loaded = room_config[scene_idx][room_idx]
     # overwrite width and length with room config
-    scene_min[:2] = room_config["bbox"][0]
-    scene_max[:2] = room_config["bbox"][1]
+    scene_min[:2] = room_config_loaded["bbox"][0]
+    scene_max[:2] = room_config_loaded["bbox"][1]
 
     return [scene_min, scene_max]
 
@@ -481,15 +484,15 @@ def filter_objs_in_dict(scene_idx, room_idx, room_objs_dict):
             if ban_word in obj_name:
                 flag_use = False
         # check keyword_ban_list
-        if "keyword_ban_list" in ROOM_CONFIG[scene_idx][room_idx].keys():
-            for ban_word in ROOM_CONFIG[scene_idx][room_idx]["keyword_ban_list"]:
-                if ban_word in obj_name:
-                    flag_use = False
-        # check fullname_ban_list
-        if "fullname_ban_list" in ROOM_CONFIG[scene_idx][room_idx].keys():
-            for fullname in ROOM_CONFIG[scene_idx][room_idx]["fullname_ban_list"]:
-                if fullname == obj_name.strip():
-                    flag_use = False
+        # if "keyword_ban_list" in ROOM_CONFIG[scene_idx][room_idx].keys():
+        #     for ban_word in ROOM_CONFIG[scene_idx][room_idx]["keyword_ban_list"]:
+        #         if ban_word in obj_name:
+        #             flag_use = False
+        # # check fullname_ban_list
+        # if "fullname_ban_list" in ROOM_CONFIG[scene_idx][room_idx].keys():
+        #     for fullname in ROOM_CONFIG[scene_idx][room_idx]["fullname_ban_list"]:
+        #         if fullname == obj_name.strip():
+        #             flag_use = False
 
         if flag_use:
             result_objects.append(obj_dict)
@@ -499,52 +502,52 @@ def filter_objs_in_dict(scene_idx, room_idx, room_objs_dict):
     return room_objs_dict
 
 
-# For metadata and 2D/3D mask generation
-def filter_room_objects(scene_idx, room_idx, room_objs):
-    for obj in room_objs:
-        obj.set_cp("instance_name", obj.get_name())
-        obj.set_cp("instance_id", 0)
+# # For metadata and 2D/3D mask generation
+# def filter_room_objects(scene_idx, room_idx, room_objs):
+#     for obj in room_objs:
+#         obj.set_cp("instance_name", obj.get_name())
+#         obj.set_cp("instance_id", 0)
 
-    if "merge_list" in ROOM_CONFIG[scene_idx][room_idx]:
-        merge_dict = ROOM_CONFIG[scene_idx][room_idx]["merge_list"]
-        for merged_label, merge_items in merge_dict.items():
-            # select objs to be merged
-            objs_to_be_merged = [
-                obj for obj in room_objs if obj.get_name() in merge_items
-            ]
-            for obj in objs_to_be_merged:
-                obj.set_cp("instance_name", merged_label)
+#     if "merge_list" in ROOM_CONFIG[scene_idx][room_idx]:
+#         merge_dict = ROOM_CONFIG[scene_idx][room_idx]["merge_list"]
+#         for merged_label, merge_items in merge_dict.items():
+#             # select objs to be merged
+#             objs_to_be_merged = [
+#                 obj for obj in room_objs if obj.get_name() in merge_items
+#             ]
+#             for obj in objs_to_be_merged:
+#                 obj.set_cp("instance_name", merged_label)
 
-    result_objects = []
-    for obj in room_objs:
-        obj_name = obj.get_cp("instance_name")
-        flag_use = True
-        # check global OBJ_BAN_LIST
-        for ban_word in OBJ_BAN_LIST:
-            if ban_word in obj_name:
-                flag_use = False
-        # check keyword_ban_list
-        if "keyword_ban_list" in ROOM_CONFIG[scene_idx][room_idx].keys():
-            for ban_word in ROOM_CONFIG[scene_idx][room_idx]["keyword_ban_list"]:
-                if ban_word in obj_name:
-                    flag_use = False
-        # check fullname_ban_list
-        if "fullname_ban_list" in ROOM_CONFIG[scene_idx][room_idx].keys():
-            for fullname in ROOM_CONFIG[scene_idx][room_idx]["fullname_ban_list"]:
-                if fullname == obj_name.strip():
-                    flag_use = False
+#     result_objects = []
+#     for obj in room_objs:
+#         obj_name = obj.get_cp("instance_name")
+#         flag_use = True
+#         # check global OBJ_BAN_LIST
+#         for ban_word in OBJ_BAN_LIST:
+#             if ban_word in obj_name:
+#                 flag_use = False
+#         # check keyword_ban_list
+#         if "keyword_ban_list" in ROOM_CONFIG[scene_idx][room_idx].keys():
+#             for ban_word in ROOM_CONFIG[scene_idx][room_idx]["keyword_ban_list"]:
+#                 if ban_word in obj_name:
+#                     flag_use = False
+#         # check fullname_ban_list
+#         if "fullname_ban_list" in ROOM_CONFIG[scene_idx][room_idx].keys():
+#             for fullname in ROOM_CONFIG[scene_idx][room_idx]["fullname_ban_list"]:
+#                 if fullname == obj_name.strip():
+#                     flag_use = False
 
-        if flag_use:
-            result_objects.append(obj)
+#         if flag_use:
+#             result_objects.append(obj)
 
-    id_map = {}
-    for obj in result_objects:
-        obj_name = obj.get_cp("instance_name")
-        if obj_name not in id_map:
-            id_map[obj_name] = len(id_map) + 1
-        obj.set_cp("instance_id", id_map[obj_name])
+#     id_map = {}
+#     for obj in result_objects:
+#         obj_name = obj.get_cp("instance_name")
+#         if obj_name not in id_map:
+#             id_map[obj_name] = len(id_map) + 1
+#         obj.set_cp("instance_id", id_map[obj_name])
 
-    return result_objects, id_map
+#     return result_objects, id_map
 
 
 def render_poses(poses, temp_dir=RENDER_TEMP_DIR) -> List:
@@ -788,7 +791,7 @@ def main():
     )
 
     with open(room_config_path, "r") as f:
-        ROOM_CONFIG = yaml.load(f, Loader=yaml.FullLoader)
+        room_config = yaml.load(f, Loader=yaml.FullLoader)
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
     dst_dir = join(
@@ -831,7 +834,10 @@ def main():
         scene_objs_dict = build_and_save_scene_cache(cache_dir, scene_objects)
 
     room_bbox = get_room_bbox(
-        args.scene_idx, args.room_idx, scene_objs_dict=scene_objs_dict
+        args.scene_idx,
+        args.room_idx,
+        scene_objs_dict=scene_objs_dict,
+        room_config=room_config,
     )
     room_objs_dict = get_room_objs_dict(room_bbox, scene_objs_dict)
     # print("room_objs_dict", room_objs_dict)
@@ -907,6 +913,7 @@ def main():
             num_poses_per_object=args.pos_per_obj,
             max_global_pos=args.max_global_pos,
             global_density=args.global_density,
+            room_config=room_config,
         )
         if not args.no_check:
             print("Render for scene {}, room {}:".format(args.scene_idx, args.room_idx))
