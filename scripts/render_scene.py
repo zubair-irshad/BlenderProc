@@ -472,7 +472,7 @@ def filter_objs_in_dict(scene_idx, room_idx, room_objs_dict):
 
     # check merge_list
     # TODO: merge_list support obb
-    room_objs_dict = merge_bbox_in_dict(scene_idx, room_idx, room_objs_dict)
+    # room_objs_dict = merge_bbox_in_dict(scene_idx, room_idx, room_objs_dict)
 
     ori_objects = room_objs_dict["objects"]
     result_objects = []
@@ -734,7 +734,7 @@ def parse_args():
         "-nc",
         "--no_check",
         action="store_true",
-        default=False,
+        default=True,
         help="Do not check the poses. Render directly.",
     )
     parser.add_argument("--gpu", type=str, default="1")
