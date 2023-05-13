@@ -790,6 +790,9 @@ def main():
         room_config_folder, "bbox_" + str(args.scene_idx) + ".yaml"
     )
 
+    print("======================================================\n\n\n")
+    print("room_config_path", room_config_path)
+    print("======================================================\n\n\n")
     with open(room_config_path, "r") as f:
         room_config = yaml.load(f, Loader=yaml.FullLoader)
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
