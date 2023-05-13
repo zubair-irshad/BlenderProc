@@ -68,9 +68,9 @@ def main():
         command = ["python", "cli.py", "run", "./scripts/render.py"]
         for scene_room in scene_room_subset:
             command += [
-                "-scene_idx",
+                "-s",
                 str(scene_room[0]),
-                "-room_idx",
+                "-r",
                 str(scene_room[1]),
                 "--mode",
                 "render",
