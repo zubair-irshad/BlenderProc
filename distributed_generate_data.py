@@ -30,7 +30,6 @@ def run_command(scene_idx, room_idx, gpu):
 
 def main():
     # Create a pool of processes, one for each worker
-    pool = mp.Pool(processes=workers)
 
     path = "./scripts/all_bboxes"
 
@@ -49,7 +48,7 @@ def main():
 
     worker_per_gpu = 20
     workers = torch.cuda.device_count() * worker_per_gpu
-
+    pool = mp.Pool(processes=workers)
     all_frames = range(0, len(scene_lists))
     frames_per_worker = math.ceil(len(all_frames) / workers)
     gpu_start = 2
