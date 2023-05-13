@@ -734,7 +734,7 @@ def parse_args():
         default=False,
         help="Do not check the poses. Render directly.",
     )
-    parser.add_argument("--gpu", type=str, default="1")
+    parser.add_argument("--gpu", type=str, default="0")
     parser.add_argument(
         "--relabel",
         action="store_true",

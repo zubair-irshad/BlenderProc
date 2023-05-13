@@ -139,3 +139,40 @@ def load_scene_objects(scene_idx, overwrite=False):
         # elif 'ceil' in name.lower():
 
     return loaded_objects
+
+
+mapping_file = bproc.utility.resolve_resource(
+    os.path.join("front_3D", "3D_front_mapping.csv")
+)
+mapping = bproc.utility.LabelIdMapping.from_csv(mapping_file)
+
+
+def load_scene_objects_wotexture(scene_idx):
+    check_cache_dir(scene_idx)
+    # mapping_file = bproc.utility.resolve_resource(
+    #     os.path.join("front_3D", "3D_front_mapping.csv")
+    # )
+
+    loaded_objects = bproc.loader.load_front3d(
+        json_path=SCENE_LIST[scene_idx],
+        future_model_path=MODEL_DIR,
+        front_3D_texture_path=TEXTURE_DIR,
+        label_mapping=mapping,
+        ceiling_light_strength=1,
+        lamp_light_strength=30,
+    )
+
+    # # add texture to wall and floor. Otherwise they will be white.
+    # for obj in loaded_objects:
+    #     name = obj.get_name()
+    #     if "wall" in name.lower():
+    #         add_texture(
+    #             obj, TEXTURE_DIR + "/1b57700d-f41b-4ac7-a31a-870544c3d608/texture.png"
+    #         )
+    #     elif "floor" in name.lower():
+    #         add_texture(
+    #             obj, TEXTURE_DIR + "/0b48b46d-4f0b-418d-bde6-30ca302288e6/texture.png"
+    #         )
+    #     # elif 'ceil' in name.lower():
+
+    return loaded_objects
