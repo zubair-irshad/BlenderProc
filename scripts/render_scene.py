@@ -784,7 +784,7 @@ def main():
 
     room_config_folder = "./scripts/all_bboxes"
     room_config_path = os.path.join(
-        room_config_folder, "bboxes_" + str(args.scene_idx) + ".yaml"
+        room_config_folder, "bbox_" + str(args.scene_idx) + ".yaml"
     )
 
     with open(room_config_path, "r") as f:
