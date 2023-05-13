@@ -843,12 +843,20 @@ def main():
     # print("room_objs_dict", room_objs_dict)
     room_objs_dict = filter_objs_in_dict(args.scene_idx, args.room_idx, room_objs_dict)
 
-    # Handling it manually
+    # # Handling it manually
+    # try:
+    #     assert len(room_objs_dict["objects"]) > 0
+    # # the errror_message provided by the user gets printed
+    # except AssertionError as msg:
+    #     print("no objects in the room, moving to next ...")
+
     try:
-        assert len(room_objs_dict["objects"]) > 0
-    # the errror_message provided by the user gets printed
+        assert (
+            len(room_objs_dict["objects"]) > 0
+        ), "no objects in the room, moving to next ..."
     except AssertionError as msg:
-        print("no objects in the room, moving to next ...")
+        print(msg)
+        sys.exit(1)  # exit the script with a non-zero status code
 
     print("room_objs_dict", room_objs_dict)
     if args.mode == "overview":
