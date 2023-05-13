@@ -47,6 +47,7 @@ def main():
 
     worker_per_gpu = 20
     workers = torch.cuda.device_count() * worker_per_gpu
+    print("workers", workers)
     all_frames = range(0, len(scene_lists))
     frames_per_worker = math.ceil(len(all_frames) / workers)
     gpu_start = 2
