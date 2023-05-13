@@ -5,24 +5,24 @@ import yaml
 import subprocess
 
 
-# Define a function to run the command
-def get_command(scene_idx, room_idx, gpu):
-    command = [
-        "python",
-        "cli.py",
-        "run",
-        "./scripts/render_scene.py",
-        "-s",
-        str(scene_idx),
-        "-r",
-        str(room_idx),
-        "--mode",
-        "render",
-        "--gpu",
-        str(gpu),
-    ]
-    return command
-    # subprocess.Popen(command).wait()
+# # Define a function to run the command
+# def get_command(scene_idx, room_idx, gpu):
+#     command = [
+#         "python",
+#         "cli.py",
+#         "run",
+#         "./scripts/render_scene.py",
+#         "-s",
+#         str(scene_idx),
+#         "-r",
+#         str(room_idx),
+#         "--mode",
+#         "render",
+#         "--gpu",
+#         str(gpu),
+#     ]
+#     return command
+#     # subprocess.Popen(command).wait()
 
 
 def main():
@@ -45,7 +45,7 @@ def main():
                 for room_idx in r_config[scene_idx]:
                     scene_lists.append([scene_idx, room_idx])
 
-    worker_per_gpu = 20
+    worker_per_gpu = 10
     workers = torch.cuda.device_count() * worker_per_gpu
     print("workers", workers)
     all_frames = range(0, len(scene_lists))
