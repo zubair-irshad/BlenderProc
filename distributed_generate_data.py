@@ -87,8 +87,16 @@ def main():
         p = subprocess.Popen(command, env=env, stderr=log, stdout=log)
         processes.append(p)
     # Wait for all the processes to finish
+    # for p in processes:
+    #     p.wait()
+
     for p in processes:
-        p.wait()
+        return_code = p.wait()
+        if return_code != 0:
+            print(
+                f"process exited with non-zero status code: {return_code}, moving to next ..."
+            )
+            continue
 
 
 if __name__ == "__main__":
