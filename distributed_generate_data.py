@@ -79,8 +79,8 @@ def main():
     # for proc in procs:
     #     proc.wait()
 
-    start_scene_idx = 2000
-    end_scene_idx = 2100
+    start_scene_idx = 2100
+    end_scene_idx = 2200
     path = "./scripts/all_bboxes"
     all_frames = []
     for i in range(start_scene_idx, end_scene_idx):
