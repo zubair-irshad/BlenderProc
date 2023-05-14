@@ -46,7 +46,7 @@ def main():
                     scene_lists.append([scene_idx, room_idx])
 
     # create a list of GPU ids to use
-    gpu_ids = list(range(2, 7))  # assuming 6 GPUs are available
+    gpu_ids = list(range(2, 8))
 
     # spawn a subprocess for each GPU-scene index pair
     procs = []
