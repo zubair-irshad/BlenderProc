@@ -3,6 +3,13 @@ import math
 import torch
 import yaml
 import subprocess
+from multiprocessing import Pool
+
+
+def process_scene(scene_idx):
+    gpu_id = scene_idx % 6 + 2  # round-robin scheduling among GPUs 2-7
+    cmd = f"CUDA_VISIBLE_DEVICES={gpu_id} python cli.py run ./scripts/render_scene.py -s {scene_idx} --gpu {gpu_id}"
+    subprocess.run(cmd, shell=True)
 
 
 # # Define a function to run the command
@@ -28,40 +35,47 @@ import subprocess
 def main():
     # Create a pool of processes, one for each worker
 
-    log_dir = "./scripts/logs"
-    os.makedirs(log_dir, exist_ok=True)
-    path = "./scripts/all_bboxes"
+    # log_dir = "./scripts/logs"
+    # os.makedirs(log_dir, exist_ok=True)
+    # path = "./scripts/all_bboxes"
+
+    # start_scene_idx = 2000
+    # end_scene_idx = 2100
+
+    # scene_lists = []
+    # for i in range(start_scene_idx, end_scene_idx):
+    #     yaml_path = os.path.join(path, "bbox_" + str(i) + ".yaml")
+    #     if os.path.exists(yaml_path):
+    #         with open(yaml_path, "r") as f:
+    #             r_config = yaml.load(f, Loader=yaml.FullLoader)
+    #         for scene_idx in r_config:
+    #             for room_idx in r_config[scene_idx]:
+    #                 scene_lists.append([scene_idx, room_idx])
+
+    # # create a list of GPU ids to use
+    # gpu_ids = list(range(2, 8))
 
     start_scene_idx = 2000
-    end_scene_idx = 2100
+    end_scene_idx = 3000
+    num_workers = 6  # number of workers in the process pool
 
-    scene_lists = []
-    for i in range(start_scene_idx, end_scene_idx):
-        yaml_path = os.path.join(path, "bbox_" + str(i) + ".yaml")
-        if os.path.exists(yaml_path):
-            with open(yaml_path, "r") as f:
-                r_config = yaml.load(f, Loader=yaml.FullLoader)
-            for scene_idx in r_config:
-                for room_idx in r_config[scene_idx]:
-                    scene_lists.append([scene_idx, room_idx])
+    with Pool(num_workers) as pool:
+        pool.map(process_scene, range(start_scene_idx, end_scene_idx))
 
-    # create a list of GPU ids to use
-    gpu_ids = list(range(2, 8))
+    # # spawn a subprocess for each GPU-scene index pair
+    # procs = []
+    # for scene_idx in range(start_scene_idx, end_scene_idx):
+    #     gpu_id = gpu_ids[scene_idx % len(gpu_ids)]  # round-robin scheduling
+    #     # scene_room_subset = scene_lists[scene_idx]
+    #     # scene_idx = scene_room_subset[0]
+    #     # room_idx = scene_room_subset[1]
+    #     cmd = f"CUDA_VISIBLE_DEVICES={gpu_id} python cli.py run ./scripts/render_scene.py -s {scene_idx} --gpu {gpu_id}"
+    #     proc = subprocess.Popen(cmd, shell=True)
+    #     procs.append(proc)
 
-    # spawn a subprocess for each GPU-scene index pair
-    procs = []
-    for scene_idx in range(start_scene_idx, end_scene_idx):
-        gpu_id = gpu_ids[scene_idx % len(gpu_ids)]  # round-robin scheduling
-        # scene_room_subset = scene_lists[scene_idx]
-        # scene_idx = scene_room_subset[0]
-        # room_idx = scene_room_subset[1]
-        cmd = f"CUDA_VISIBLE_DEVICES={gpu_id} python cli.py run ./scripts/render_scene.py -s {scene_idx} --gpu {gpu_id}"
-        proc = subprocess.Popen(cmd, shell=True)
-        procs.append(proc)
-
-    # wait for all subprocesses to complete
-    for proc in procs:
-        proc.wait()
+    # # wait for all subprocesses to complete
+    # for proc in procs:
+    #     proc.wait()
 
     # worker_per_gpu = 1
     # workers = torch.cuda.device_count() * worker_per_gpu
