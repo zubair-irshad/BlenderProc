@@ -95,10 +95,16 @@ def main():
             proc = subprocess.Popen(cmd, shell=True, env=env)
             procs.append(proc)
 
-        # Wait for all processes to finish before moving on to the next GPU
-        for proc in procs:
-            proc.wait()
-        procs.clear()
+        # Only allow up to num_gpus processes to run in parallel
+        if len(procs) >= num_gpus:
+            for proc in procs:
+                proc.wait()
+            procs.clear()
+
+    # Wait for any remaining processes to finish
+    for proc in procs:
+        proc.wait()
+    procs.clear()
 
     # print("workers", workers)
     # all_frames = range(0, len(scene_lists))
