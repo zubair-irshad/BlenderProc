@@ -61,6 +61,7 @@ def construct_scene_list():
     for scene_path in scene_list:
         scene_list_all.append(scene_path)
     print(f"SCENE_LIST is constructed. {len(scene_list_all)} scenes in total")
+    return scene_list_all
 
 
 scene_list_all = construct_scene_list()
