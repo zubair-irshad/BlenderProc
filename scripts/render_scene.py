@@ -35,6 +35,7 @@ sys.path.append("./scripts")
 from utils.pose_utils import *
 from utils.front3d_utils import *
 from load_helper import load_scene_objects
+from utils import build_and_save_scene_cache
 
 pi = np.pi
 cos = np.cos
@@ -57,11 +58,6 @@ def main():
         room_config = yaml.load(f, Loader=yaml.FullLoader)
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
-    dst_dir = join(
-        args.render_root, "3dfront_{:04d}_{:02}".format(args.scene_idx, args.room_idx)
-    )
-    os.makedirs(dst_dir, exist_ok=True)
-
     scene_list_all = construct_scene_list()
 
     cache_dir = f"./cached/{args.scene_idx}"
@@ -71,27 +67,33 @@ def main():
     scene_objects = load_scene_objects(args.scene_idx, scene_list_all)
     scene_objs_dict = build_and_save_scene_cache(cache_dir, scene_objects)
 
-    room_bbox = get_room_bbox(
-        args.scene_idx,
-        args.room_idx,
-        scene_objs_dict=scene_objs_dict,
-        room_config=room_config,
-    )
-    room_objs_dict = get_room_objs_dict(room_bbox, scene_objs_dict)
-    room_objs_dict = filter_objs_in_dict(args.scene_idx, args.room_idx, room_objs_dict)
+    for room_idx in room_config[args.scene_idx].keys():
+        print("room idx", room_idx)
+        dst_dir = join(
+            args.render_root, "3dfront_{:04d}_{:02}".format(args.scene_idx, room_idx)
+        )
+        os.makedirs(dst_dir, exist_ok=True)
 
-    try:
-        assert (
-            len(room_objs_dict["objects"]) > 0
-        ), "no objects in the room, moving to next ..."
-    except AssertionError as msg:
-        print(msg)
-        sys.exit(1)  # exit the script with a non-zero status code
+        room_bbox = get_room_bbox(
+            args.scene_idx,
+            room_idx,
+            scene_objs_dict=scene_objs_dict,
+            room_config=room_config,
+        )
+        room_objs_dict = get_room_objs_dict(room_bbox, scene_objs_dict)
+        room_objs_dict = filter_objs_in_dict(room_objs_dict)
 
-    if args.mode == "render":
+        try:
+            assert (
+                len(room_objs_dict["objects"]) > 0
+            ), "no objects in the room, moving to next ..."
+        except AssertionError as msg:
+            print(msg)
+            sys.exit(1)  # exit the script with a non-zero status code
+
         poses, num_closeup, num_global = generate_room_poses(
             args.scene_idx,
-            args.room_idx,
+            room_idx,
             room_objs_dict,
             room_bbox,
             num_poses_per_object=args.pos_per_obj,
@@ -100,7 +102,7 @@ def main():
             room_config=room_config,
         )
         if not args.no_check:
-            print("Render for scene {}, room {}:".format(args.scene_idx, args.room_idx))
+            print("Render for scene {}, room {}:".format(args.scene_idx, room_idx))
             for obj_dict in room_objs_dict["objects"]:
                 print(f"\t{obj_dict['aabb']}")
             print(

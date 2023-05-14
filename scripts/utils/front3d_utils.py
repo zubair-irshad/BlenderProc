@@ -92,7 +92,7 @@ OBJ_BAN_LIST = [
 ]
 
 
-def filter_objs_in_dict(scene_idx, room_idx, room_objs_dict):
+def filter_objs_in_dict(room_objs_dict):
     """Clean up objects according to merge_list, global OBJ_BAN_LIST, keyword_ban_list, and fullname_ban_list."""
 
     # check merge_list

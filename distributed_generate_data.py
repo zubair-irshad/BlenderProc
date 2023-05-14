@@ -45,58 +45,76 @@ def main():
                 for room_idx in r_config[scene_idx]:
                     scene_lists.append([scene_idx, room_idx])
 
-    worker_per_gpu = 1
-    workers = torch.cuda.device_count() * worker_per_gpu
-    print("workers", workers)
-    all_frames = range(0, len(scene_lists))
-    frames_per_worker = math.ceil(len(all_frames) / workers)
-    gpu_start = 2
-    processes = []
-    for i in range(workers):
-        curr_gpu = (i // worker_per_gpu) + gpu_start
+    # create a list of GPU ids to use
+    gpu_ids = list(range(2, 7))  # assuming 6 GPUs are available
 
-        start = i * frames_per_worker
-        end = start + frames_per_worker
+    # spawn a subprocess for each GPU-scene index pair
+    procs = []
+    for scene_idx in range(start_scene_idx, end_scene_idx):
+        gpu_id = gpu_ids[scene_idx % len(gpu_ids)]  # round-robin scheduling
+        # scene_room_subset = scene_lists[scene_idx]
+        # scene_idx = scene_room_subset[0]
+        # room_idx = scene_room_subset[1]
+        cmd = f"CUDA_VISIBLE_DEVICES={gpu_id} python cli.py run ./scripts/render_scene.py -s {scene_idx} --gpu {gpu_id}"
+        proc = subprocess.Popen(cmd, shell=True)
+        procs.append(proc)
 
-        print(i, curr_gpu)
-        print(all_frames[start:end])
-        print("start, : end", start, end)
+    # wait for all subprocesses to complete
+    for proc in procs:
+        proc.wait()
 
-        # Select a subset of scene_idx and room_idx for this worker
-        scene_room_subset = scene_lists[start:end]
+    # worker_per_gpu = 1
+    # workers = torch.cuda.device_count() * worker_per_gpu
+    # print("workers", workers)
+    # all_frames = range(0, len(scene_lists))
+    # frames_per_worker = math.ceil(len(all_frames) / workers)
+    # gpu_start = 2
+    # processes = []
+    # for i in range(workers):
+    #     curr_gpu = (i // worker_per_gpu) + gpu_start
 
-        # Construct the command to run
-        command = ["python", "cli.py", "run", "./scripts/render_scene.py"]
-        for scene_room in scene_room_subset:
-            command += [
-                "-s",
-                str(scene_room[0]),
-                "-r",
-                str(scene_room[1]),
-                "--mode",
-                "render",
-                "--gpu",
-                str(curr_gpu),
-            ]
+    #     start = i * frames_per_worker
+    #     end = start + frames_per_worker
 
-        # Spawn a process to run the command
-        log_file = os.path.join(log_dir, f"log_{i}.txt")
-        log = open(log_file, "w")
-        env = os.environ.copy()
-        env["CUDA_VISIBLE_DEVICES"] = str(curr_gpu)
-        p = subprocess.Popen(command, env=env, stderr=log, stdout=log)
-        processes.append(p)
-    # Wait for all the processes to finish
+    #     print(i, curr_gpu)
+    #     print(all_frames[start:end])
+    #     print("start, : end", start, end)
+
+    #     # Select a subset of scene_idx and room_idx for this worker
+    #     scene_room_subset = scene_lists[start:end]
+
+    #     # Construct the command to run
+    #     command = ["python", "cli.py", "run", "./scripts/render_scene.py"]
+    #     for scene_room in scene_room_subset:
+    #         command += [
+    #             "-s",
+    #             str(scene_room[0]),
+    #             "-r",
+    #             str(scene_room[1]),
+    #             "--mode",
+    #             "render",
+    #             "--gpu",
+    #             str(curr_gpu),
+    #         ]
+
+    #     # Spawn a process to run the command
+    #     log_file = os.path.join(log_dir, f"log_{i}.txt")
+    #     log = open(log_file, "w")
+    #     env = os.environ.copy()
+    #     env["CUDA_VISIBLE_DEVICES"] = str(curr_gpu)
+    #     p = subprocess.Popen(command, env=env, stderr=log, stdout=log)
+    #     processes.append(p)
+    # # Wait for all the processes to finish
+    # # for p in processes:
+    # #     p.wait()
+
     # for p in processes:
-    #     p.wait()
-
-    for p in processes:
-        return_code = p.wait()
-        if return_code != 0:
-            print(
-                f"process exited with non-zero status code: {return_code}, moving to next ..."
-            )
-            continue
+    #     return_code = p.wait()
+    #     if return_code != 0:
+    #         print(
+    #             f"process exited with non-zero status code: {return_code}, moving to next ..."
+    #         )
+    #         continue
 
 
 if __name__ == "__main__":
