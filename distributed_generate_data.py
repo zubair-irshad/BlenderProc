@@ -90,14 +90,14 @@ def main():
 
     print("all_frames", all_frames)
     worker_per_gpu = 1
-    num_gpus = 6
-
+    num_gpus = 8  # 6
+    gpu_start = 0  # 2
     workers = num_gpus * worker_per_gpu
     # all_frames = range(start_scene_idx, end_scene_idx)
     # print("workers", workers)
     frames_per_worker = math.ceil(len(all_frames) / workers)
     print("frames_per_worker", frames_per_worker)
-    gpu_start = 2
+
     # processes = []
     log_dir = "./scripts/logs"
     for i in range(workers):
