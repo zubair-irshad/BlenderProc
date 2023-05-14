@@ -20,9 +20,15 @@ from blenderproc.python.sampler.Front3DPointInRoomSampler import (
 from load_helper import load_scene_objects
 from utils import build_and_save_scene_cache
 
-LAYOUT_DIR = "/home/mirshad7/Downloads/3D-FRONT"
-TEXTURE_DIR = "/home/mirshad7/Downloads/3D-FRONT-texture"
-MODEL_DIR = "/home/mirshad7/Downloads/3D-FUTURE-model"
+# LAYOUT_DIR = "/home/mirshad7/Downloads/3D-FRONT"
+# TEXTURE_DIR = "/home/mirshad7/Downloads/3D-FRONT-texture"
+# MODEL_DIR = "/home/mirshad7/Downloads/3D-FUTURE-model"
+
+
+LAYOUT_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT"
+TEXTURE_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT-texture"
+MODEL_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FUTURE-model"
+
 
 mapping_file = bproc.utility.resolve_resource(
     os.path.join("front_3D", "3D_front_mapping.csv")
@@ -93,7 +99,7 @@ def save_bbox_and_scene_cache(idx):
                 "bbox": [min_corner[:2].tolist(), max_corner[:2].tolist()]
             }
         save_path = os.path.join(
-            "/home/mirshad7/BlenderProc/scripts/all_bboxes_w_cache",
+            "/home/ubuntu/zubair/BlenderProc/scripts/all_bboxes_w_cache",
             "bbox_" + str(idx) + ".yaml",
         )
         with open(save_path, "w") as file:
