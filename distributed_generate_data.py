@@ -1,13 +1,9 @@
-import os
-import math
-import torch
-import yaml
 import subprocess
-from multiprocessing import Pool
+import multiprocessing
 
 
-def process_scene(scene_idx):
-    gpu_id = scene_idx % 6 + 2  # round-robin scheduling among GPUs 2-7
+def process_scene(gpu_id, scene_idx):
+    # gpu_id = scene_idx % 6 + 2  # round-robin scheduling among GPUs 2-7
     cmd = f"CUDA_VISIBLE_DEVICES={gpu_id} python cli.py run ./scripts/render_scene.py -s {scene_idx} --gpu {gpu_id}"
     subprocess.run(cmd, shell=True)
 
@@ -55,12 +51,16 @@ def main():
     # # create a list of GPU ids to use
     # gpu_ids = list(range(2, 8))
 
-    start_scene_idx = 2000
-    end_scene_idx = 3000
-    num_workers = 6  # number of workers in the process pool
+    with multiprocessing.Pool(6) as pool:
+        for scene_idx in range(2000, 3000):
+            pool.starmap(process_scene, [(gpu_id, scene_idx) for gpu_id in range(2, 8)])
 
-    with Pool(num_workers) as pool:
-        pool.map(process_scene, range(start_scene_idx, end_scene_idx))
+    # start_scene_idx = 2000
+    # end_scene_idx = 3000
+    # num_workers = 6  # number of workers in the process pool
+
+    # with Pool(num_workers) as pool:
+    #     pool.map(process_scene, range(start_scene_idx, end_scene_idx))
 
     # # spawn a subprocess for each GPU-scene index pair
     # procs = []
