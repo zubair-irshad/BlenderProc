@@ -2,12 +2,14 @@
 # import multiprocessing
 import os
 import subprocess
+import math
+from subprocess import Popen, PIPE
 
 
-def process_scene(gpu_id, scene_idx):
-    # gpu_id = scene_idx % 6 + 2  # round-robin scheduling among GPUs 2-7
-    cmd = f"CUDA_VISIBLE_DEVICES={gpu_id} python cli.py run ./scripts/render_scene.py -s {scene_idx} --gpu {gpu_id}"
-    subprocess.run(cmd, shell=True)
+# def process_scene(gpu_id, scene_idx):
+#     # gpu_id = scene_idx % 6 + 2  # round-robin scheduling among GPUs 2-7
+#     cmd = f"CUDA_VISIBLE_DEVICES={gpu_id} python cli.py run ./scripts/render_scene.py -s {scene_idx} --gpu {gpu_id}"
+#     subprocess.run(cmd, shell=True)
 
 
 # # Define a function to run the command
@@ -57,8 +59,6 @@ def main():
     #     for scene_idx in range(2000, 3000):
     #         pool.starmap(process_scene, [(gpu_id, scene_idx) for gpu_id in range(2, 8)])
 
-    # start_scene_idx = 2000
-    # end_scene_idx = 3000
     # num_workers = 6  # number of workers in the process pool
 
     # with Pool(num_workers) as pool:
@@ -79,40 +79,42 @@ def main():
     # for proc in procs:
     #     proc.wait()
 
-    # worker_per_gpu = 1
-    # workers = 6 * worker_per_gpu
-
+    start_scene_idx = 2000
+    end_scene_idx = 3000
+    worker_per_gpu = 1
     num_gpus = 6
-    gpu_ids = list(range(2, 2 + num_gpus))
 
-    procs = []
-    for i, gpu_id in enumerate(gpu_ids):
-        env = os.environ.copy()
-        env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-
-        for scene_idx in range(2000, 3000, num_gpus):
-            cmd = f"CUDA_VISIBLE_DEVICES={gpu_id} python cli.py run ./scripts/render_scene.py -s {scene_idx} --gpu {gpu_id}"
-            proc = subprocess.Popen(cmd, shell=True, env=env)
-            procs.append(proc)
-
-        # Only allow up to num_gpus processes to run in parallel
-        if len(procs) >= num_gpus:
-            for proc in procs:
-                proc.wait()
-            procs.clear()
-
-    # Wait for any remaining processes to finish
-    for proc in procs:
-        proc.wait()
-    procs.clear()
-
+    workers = num_gpus * worker_per_gpu
+    all_frames = range(start_scene_idx, end_scene_idx)
     # print("workers", workers)
-    # all_frames = range(0, len(scene_lists))
-    # frames_per_worker = math.ceil(len(all_frames) / workers)
-    # gpu_start = 2
+    frames_per_worker = math.ceil(len(all_frames) / workers)
+    gpu_start = 2
     # processes = []
-    # for i in range(workers):
-    #     curr_gpu = (i // worker_per_gpu) + gpu_start
+    for i in range(workers):
+        curr_gpu = (i // worker_per_gpu) + gpu_start
+
+        start = i * frames_per_worker
+        end = start + frames_per_worker
+
+        print(i, curr_gpu)
+        print(all_frames[start:end])
+        print("start, : end", start, end)
+
+        my_env = os.environ.copy()
+        my_env["CUDA_VISIBLE_DEVICES"] = str(curr_gpu)
+        command = [
+            "python",
+            "distributed_worker.py",
+            "--gpu",
+            str(curr_gpu),
+            "--start",
+            str(start),
+            "--end",
+            str(end),
+        ]
+        log = open("worker_{}.txt".format(i), "w")
+        print(command)
+        Popen(command, env=my_env, stderr=log, stdout=log)
 
     #     start = i * frames_per_worker
     #     end = start + frames_per_worker
