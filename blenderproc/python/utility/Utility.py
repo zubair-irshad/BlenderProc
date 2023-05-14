@@ -11,6 +11,7 @@ import warnings
 import numpy as np
 import json
 from sys import platform
+
 if platform != "win32":
     # importing git doesn't work under windows
     import git
@@ -22,7 +23,7 @@ from blenderproc.version import __version__
 
 
 def resolve_path(path: str) -> str:
-    """ Returns an absolute path. If given path is relative, current working directory is put in front.
+    """Returns an absolute path. If given path is relative, current working directory is put in front.
 
     :param path: The path to resolve.
     :return: The absolute path.
@@ -36,31 +37,41 @@ def resolve_path(path: str) -> str:
     else:
         return os.path.join(os.getcwd(), path)
 
+
 def resolve_resource(relative_resource_path: str) -> str:
-    """ Returns an absolute path to the given BlenderProc resource.
+    """Returns an absolute path to the given BlenderProc resource.
 
     :param relative_resource_path: The relative path inside the BlenderProc resource folder.
     :return: The absolute path.
     """
 
-    return resolve_path(os.path.join(Utility.blenderproc_root, "blenderproc", "resources", relative_resource_path))
+    return resolve_path(
+        os.path.join(
+            Utility.blenderproc_root, "blenderproc", "resources", relative_resource_path
+        )
+    )
+
 
 def num_frames() -> int:
-    """ Returns the currently total number of registered frames.
+    """Returns the currently total number of registered frames.
 
     :return: The number of frames.
     """
     return bpy.context.scene.frame_end - bpy.context.scene.frame_start
 
+
 def reset_keyframes() -> None:
-    """ Removes registered keyframes from all objects and resets frame_start and frame_end """
+    """Removes registered keyframes from all objects and resets frame_start and frame_end"""
     bpy.context.scene.frame_start = 0
     bpy.context.scene.frame_end = 0
     for a in bpy.data.actions:
         bpy.data.actions.remove(a)
 
-def set_keyframe_render_interval(frame_start: Optional[int] = None, frame_end: Optional[int] = None):
-    """ Sets frame_start and/or frame_end which determine the frames that will be rendered.
+
+def set_keyframe_render_interval(
+    frame_start: Optional[int] = None, frame_end: Optional[int] = None
+):
+    """Sets frame_start and/or frame_end which determine the frames that will be rendered.
 
     :param frame_start: The new frame_start value. If None, it will be ignored.
     :param frame_end: The new frame_end value. If None, it will be ignored.
@@ -70,14 +81,17 @@ def set_keyframe_render_interval(frame_start: Optional[int] = None, frame_end: O
     if frame_end is not None:
         bpy.context.scene.frame_end = frame_end
 
+
 class Utility:
     blenderproc_root = os.path.join(os.path.dirname(__file__), "..", "..", "..")
     temp_dir = ""
     used_temp_id = None
 
     @staticmethod
-    def initialize_modules(module_configs: List[Union[Dict[str, Any], str]]) -> List["Module"]:
-        """ Initializes the modules described in the given configuration.
+    def initialize_modules(
+        module_configs: List[Union[Dict[str, Any], str]]
+    ) -> List["Module"]:
+        """Initializes the modules described in the given configuration.
 
         Example for module_configs:
 
@@ -125,7 +139,9 @@ class Utility:
             # Check if the module has a repetition counter
             amount_of_repetitions = 1
             if "amount_of_repetitions" in module_config:
-                amount_of_repetitions = Config(module_config).get_int("amount_of_repetitions")
+                amount_of_repetitions = Config(module_config).get_int(
+                    "amount_of_repetitions"
+                )
 
             with BlockStopWatch("Initializing module " + module_config["module"]):
                 for i in range(amount_of_repetitions):
@@ -135,7 +151,10 @@ class Utility:
                         try:
                             # Try to load the module using the current suffix
                             module = importlib.import_module(
-                                "blenderproc.python.modules." + module_config["module"] + suffix)
+                                "blenderproc.python.modules."
+                                + module_config["module"]
+                                + suffix
+                            )
                         except ModuleNotFoundError:
                             # Try next suffix
                             continue
@@ -150,7 +169,10 @@ class Utility:
                     # Throw an error if no module/class with the specified name + any suffix has been found
                     if module_class is None:
                         raise Exception(
-                            "The module blenderproc.python.modules." + module_config["module"] + " was not found!")
+                            "The module blenderproc.python.modules."
+                            + module_config["module"]
+                            + " was not found!"
+                        )
 
                     # Create module
                     modules.append(module_class(Config(config)))
@@ -159,7 +181,7 @@ class Utility:
 
     @staticmethod
     def get_current_version() -> Optional[str]:
-        """ Gets the git commit hash.
+        """Gets the git commit hash.
 
         :return: a string, the BlenderProc version, or None if unavailable
         """
@@ -179,8 +201,10 @@ class Utility:
         return Utility.temp_dir
 
     @staticmethod
-    def merge_dicts(source: Dict[Any, Any], destination: Dict[Any, Any]) -> Dict[Any, Any]:
-        """ Recursively copies all key value pairs from src to dest (Overwrites existing)
+    def merge_dicts(
+        source: Dict[Any, Any], destination: Dict[Any, Any]
+    ) -> Dict[Any, Any]:
+        """Recursively copies all key value pairs from src to dest (Overwrites existing)
 
         :param source: The source dict.
         :param destination: The destination dict
@@ -198,7 +222,7 @@ class Utility:
 
     @staticmethod
     def hex_to_rgba(hex_value: str) -> List[float]:
-        """ Converts the given hex string to rgba color values.
+        """Converts the given hex string to rgba color values.
 
         :param hex_value: The hex string, describing rgb.
         :return: The rgba color, in form of a list. Values between 0 and 1.
@@ -207,18 +231,22 @@ class Utility:
 
     @staticmethod
     def rgb_to_hex(rgb: Tuple[int, int, int]) -> str:
-        """ Converts the given rgb to hex values.
+        """Converts the given rgb to hex values.
 
         :param rgb: tuple of three with rgb integers.
         :return: Hex string.
         """
-        return '#%02x%02x%02x' % tuple(rgb)
+        return "#%02x%02x%02x" % tuple(rgb)
 
     @staticmethod
-    def insert_node_instead_existing_link(links: bpy.types.NodeLinks, source_socket: bpy.types.NodeSocket,
-                                          new_node_dest_socket: bpy.types.NodeSocket,
-                                          new_node_src_socket: bpy.types.NodeSocket, dest_socket: bpy.types.NodeSocket):
-        """ Replaces the node between source_socket and dest_socket with a new node.
+    def insert_node_instead_existing_link(
+        links: bpy.types.NodeLinks,
+        source_socket: bpy.types.NodeSocket,
+        new_node_dest_socket: bpy.types.NodeSocket,
+        new_node_src_socket: bpy.types.NodeSocket,
+        dest_socket: bpy.types.NodeSocket,
+    ):
+        """Replaces the node between source_socket and dest_socket with a new node.
 
         Before: source_socket -> dest_socket
         After: source_socket -> new_node_dest_socket and new_node_src_socket -> dest_socket
@@ -237,8 +265,9 @@ class Utility:
         links.new(new_node_src_socket, dest_socket)
 
     @staticmethod
-    def get_node_connected_to_the_output_and_unlink_it(material: bpy.types.Material) \
-            -> Tuple[Optional[bpy.types.Node], bpy.types.Node]:
+    def get_node_connected_to_the_output_and_unlink_it(
+        material: bpy.types.Material,
+    ) -> Tuple[Optional[bpy.types.Node], bpy.types.Node]:
         """
         Searches for the OutputMaterial in the given material and finds the connected node to it,
         removes the connection between this node and the output and returns this node and the material_output
@@ -248,7 +277,7 @@ class Utility:
         nodes = material.node_tree.nodes
         links = material.node_tree.links
 
-        material_output = Utility.get_the_one_node_with_type(nodes, 'OutputMaterial')
+        material_output = Utility.get_the_one_node_with_type(nodes, "OutputMaterial")
         # find the node, which is connected to the output
         node_connected_to_the_output = None
         for link in links:
@@ -260,7 +289,9 @@ class Utility:
         return node_connected_to_the_output, material_output
 
     @staticmethod
-    def get_nodes_with_type(nodes: List[bpy.types.Node], node_type: str, created_in_func: str = "") -> List[bpy.types.Node]:
+    def get_nodes_with_type(
+        nodes: List[bpy.types.Node], node_type: str, created_in_func: str = ""
+    ) -> List[bpy.types.Node]:
         """
         Returns all nodes which are of the given node_type
 
@@ -271,11 +302,15 @@ class Utility:
         """
         nodes_with_type = [node for node in nodes if node_type in node.bl_idname]
         if created_in_func:
-            nodes_with_type = Utility.get_nodes_created_in_func(nodes_with_type, created_in_func)
+            nodes_with_type = Utility.get_nodes_created_in_func(
+                nodes_with_type, created_in_func
+            )
         return nodes_with_type
 
     @staticmethod
-    def get_the_one_node_with_type(nodes: List[bpy.types.Node], node_type: str, created_in_func: str = "") -> bpy.types.Node:
+    def get_the_one_node_with_type(
+        nodes: List[bpy.types.Node], node_type: str, created_in_func: str = ""
+    ) -> bpy.types.Node:
         """
         Returns the one nodes which is of the given node_type
 
@@ -290,20 +325,32 @@ class Utility:
         if node and len(node) == 1:
             return node[0]
         else:
-            raise Exception("There is not only one node of this type: {}, there are: {}".format(node_type, len(node)))
+            raise Exception(
+                "There is not only one node of this type: {}, there are: {}".format(
+                    node_type, len(node)
+                )
+            )
 
     @staticmethod
-    def get_nodes_created_in_func(nodes: List[bpy.types.Node], created_in_func: str) -> List[bpy.types.Node]:
-        """ Returns all nodes which are created in the given function
-        
+    def get_nodes_created_in_func(
+        nodes: List[bpy.types.Node], created_in_func: str
+    ) -> List[bpy.types.Node]:
+        """Returns all nodes which are created in the given function
+
         :param nodes: list of nodes of the current material
         :param created_in_func: return all nodes created in the given function
         :return: The list of nodes with the given type.
         """
-        return [node for node in nodes if "created_in_func" in node and node["created_in_func"] == created_in_func]
+        return [
+            node
+            for node in nodes
+            if "created_in_func" in node and node["created_in_func"] == created_in_func
+        ]
 
     @staticmethod
-    def read_suncg_lights_windows_materials() -> Tuple[Dict[str, Tuple[List[str], List[str]]], List[str]]:
+    def read_suncg_lights_windows_materials() -> (
+        Tuple[Dict[str, Tuple[List[str], List[str]]], List[str]]
+    ):
         """
         Returns the lights dictionary and windows list which contains their respective materials
 
@@ -312,7 +359,9 @@ class Utility:
         # Read in lights
         lights: Dict[str, Tuple[List[str], List[str]]] = {}
         # File format: <obj id> <number of lightbulb materials> <lightbulb material names> <number of lampshade materials> <lampshade material names>
-        with open(resolve_resource(os.path.join("suncg", "light_geometry_compact.txt"))) as f:
+        with open(
+            resolve_resource(os.path.join("suncg", "light_geometry_compact.txt"))
+        ) as f:
             lines = f.readlines()
             for row in lines:
                 row = row.strip().split()
@@ -336,7 +385,9 @@ class Utility:
 
         # Read in windows
         windows = []
-        with open(resolve_resource(os.path.join('suncg', 'ModelCategoryMapping.csv')), 'r') as csvfile:
+        with open(
+            resolve_resource(os.path.join("suncg", "ModelCategoryMapping.csv")), "r"
+        ) as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 if row["coarse_grained_class"] == "window":
@@ -346,7 +397,7 @@ class Utility:
 
     @staticmethod
     def build_provider(name: str, parameters: Dict[str, Any]) -> "Provider":
-        """ Builds up providers like sampler or getter.
+        """Builds up providers like sampler or getter.
 
         It first builds the config and then constructs the required provider.
 
@@ -358,8 +409,12 @@ class Utility:
         for suffix in ["Module", ""]:
             try:
                 # Import class from blenderproc.python.modules
-                module_class = getattr(importlib.import_module("blenderproc.python.modules.provider." + name + suffix),
-                                       name.split(".")[-1] + suffix)
+                module_class = getattr(
+                    importlib.import_module(
+                        "blenderproc.python.modules.provider." + name + suffix
+                    ),
+                    name.split(".")[-1] + suffix,
+                )
                 break
             except ModuleNotFoundError:
                 # Try next suffix
@@ -367,7 +422,11 @@ class Utility:
 
         # Throw an error if no module/class with the specified name + any suffix has been found
         if module_class is None:
-            raise Exception("The module blenderproc.python.modules.provider." + name + " was not found!")
+            raise Exception(
+                "The module blenderproc.python.modules.provider."
+                + name
+                + " was not found!"
+            )
 
         # Build configuration
         config = Config(parameters)
@@ -376,7 +435,7 @@ class Utility:
 
     @staticmethod
     def build_provider_based_on_config(config: Config) -> "Provider":
-        """ Builds up the provider using the parameters described in the given config.
+        """Builds up the provider using the parameters described in the given config.
 
         The given config should follow the following scheme:
 
@@ -397,18 +456,23 @@ class Utility:
 
         parameters = {}
         for key in config.data.keys():
-            if key != 'provider':
+            if key != "provider":
                 parameters[key] = config.data[key]
 
-        if not config.has_param('provider'):
+        if not config.has_param("provider"):
             raise Exception(
-                "Each provider needs a provider label, this one does not contain one: {}".format(config.data))
+                "Each provider needs a provider label, this one does not contain one: {}".format(
+                    config.data
+                )
+            )
 
         return Utility.build_provider(config.get_string("provider"), parameters)
 
     @staticmethod
-    def generate_equidistant_values(num: int, space_size_per_dimension: int) -> Tuple[List[List[int]], int]:
-        """ This function generates N equidistant values in a 3-dim space and returns num of them.
+    def generate_equidistant_values(
+        num: int, space_size_per_dimension: int
+    ) -> Tuple[List[List[int]], int]:
+        """This function generates N equidistant values in a 3-dim space and returns num of them.
 
         Every dimension of the space is limited by [0, K], where K is the given space_size_per_dimension.
         Basically it splits a cube of shape K x K x K in to N smaller blocks. Where, N = cube_length^3
@@ -423,7 +487,7 @@ class Utility:
         num_splits_per_dimension = 1
         values = []
         # find cube_length bound of cubes to be made
-        while num_splits_per_dimension ** 3 < num:
+        while num_splits_per_dimension**3 < num:
             num_splits_per_dimension += 1
 
         # Calc the side length of a block. We do a integer division here, s.t. we get blocks with the exact same size,
@@ -444,9 +508,10 @@ class Utility:
         return values[:num], num_splits_per_dimension
 
     @staticmethod
-    def map_back_from_equally_spaced_equidistant_values(values: np.ndarray, num_splits_per_dimension: int,
-                                                        space_size_per_dimension: int) -> np.ndarray:
-        """ Maps the given values back to their original indices.
+    def map_back_from_equally_spaced_equidistant_values(
+        values: np.ndarray, num_splits_per_dimension: int, space_size_per_dimension: int
+    ) -> np.ndarray:
+        """Maps the given values back to their original indices.
 
         This function calculates for each given value the corresponding index in the list of values created by the generate_equidistant_values() method.
 
@@ -463,25 +528,29 @@ class Utility:
         # Calculate the block indices per dimension
         values /= block_length
         # Compute the global index of the block (corresponds to the three nested for loops inside generate_equidistant_values())
-        values = values[:, :, 0] * num_splits_per_dimension * num_splits_per_dimension + values[:, :,1] * num_splits_per_dimension + values[:, :, 2]
+        values = (
+            values[:, :, 0] * num_splits_per_dimension * num_splits_per_dimension
+            + values[:, :, 1] * num_splits_per_dimension
+            + values[:, :, 2]
+        )
         # Round the values, s.t. derivations are put back to their closest index.
         return np.round(values)
 
     @staticmethod
     def replace_output_entry(output: Dict[str, str]):
-        """ Replaces the output in the scene's custom properties with the given one
+        """Replaces the output in the scene's custom properties with the given one
 
         :param output: A dict containing key and path of the new output type.
         """
         registered_outputs = Utility.get_registered_outputs()
-        for i,reg_out in enumerate(registered_outputs):
+        for i, reg_out in enumerate(registered_outputs):
             if output["key"] == reg_out["key"]:
                 registered_outputs[i] = output
-        GlobalStorage.set("output", registered_outputs)      
+        GlobalStorage.set("output", registered_outputs)
 
     @staticmethod
     def add_output_entry(output: Dict[str, str]):
-        """ Registers the given output in the scene's custom properties
+        """Registers the given output in the scene's custom properties
 
         :param output: A dict containing key and path of the new output type.
         """
@@ -495,9 +564,15 @@ class Utility:
             GlobalStorage.set("output", [output])
 
     @staticmethod
-    def register_output(output_dir: str, prefix: str, key: str, suffix: str, version: str,
-                        unique_for_camposes: bool = True):
-        """ Registers new output type using configured key and file prefix.
+    def register_output(
+        output_dir: str,
+        prefix: str,
+        key: str,
+        suffix: str,
+        version: str,
+        unique_for_camposes: bool = True,
+    ):
+        """Registers new output type using configured key and file prefix.
 
         :param output_dir: The output directory containing the generated files.
         :param prefix: The default prefix of the generated files.
@@ -507,15 +582,19 @@ class Utility:
         :param unique_for_camposes: True if the output to be registered is unique for all the camera poses
         """
 
-        Utility.add_output_entry({
-            "key": key,
-            "path": os.path.join(output_dir, prefix) + ("%04d" if unique_for_camposes else "") + suffix,
-            "version": version
-        })
+        Utility.add_output_entry(
+            {
+                "key": key,
+                "path": os.path.join(output_dir, prefix)
+                + ("%04d" if unique_for_camposes else "")
+                + suffix,
+                "version": version,
+            }
+        )
 
     @staticmethod
     def find_registered_output_by_key(key: str) -> Optional[Any]:
-        """ Returns the output which was registered with the given key.
+        """Returns the output which was registered with the given key.
 
         :param key: The output key to look for.
         :return: The dict containing all information registered for that output. If no output with the given key exists, None is returned.
@@ -528,9 +607,9 @@ class Utility:
 
     @staticmethod
     def get_registered_outputs() -> List[Dict[str, Any]]:
-        """ Returns a list of outputs which were registered.
+        """Returns a list of outputs which were registered.
 
-        :return: A list of dicts containing all information registered for the outputs. 
+        :return: A list of dicts containing all information registered for the outputs.
         """
         outputs = []
         if GlobalStorage.is_in_storage("output"):
@@ -539,8 +618,10 @@ class Utility:
         return outputs
 
     @staticmethod
-    def output_already_registered(output: Dict[str, Any], output_list: List[Dict[str, Any]]) -> bool:
-        """ Checks if the given output entry already exists in the list of outputs, by checking on the key and path.
+    def output_already_registered(
+        output: Dict[str, Any], output_list: List[Dict[str, Any]]
+    ) -> bool:
+        """Checks if the given output entry already exists in the list of outputs, by checking on the key and path.
         Also throws an error if it detects an entry having the same key but not the same path and vice versa since this
         is ambiguous.
 
@@ -552,16 +633,18 @@ class Utility:
             if output["key"] == _output["key"] and output["path"] == _output["path"]:
                 print("Warning! Detected output entries with duplicate keys and paths")
                 return True
-            if output["key"] == _output["key"] or output["path"] == _output["path"]:
-                raise Exception("Can not have two output entries with the same key/path but not same path/key." +
-                                "Original entry's data: key:{} path:{}, Entry to be registered: key:{} path:{}"
-                                .format(_output["key"], _output["path"], output["key"], output["path"]))
+            # if output["key"] == _output["key"] or output["path"] == _output["path"]:
+            #     raise Exception("Can not have two output entries with the same key/path but not same path/key." +
+            #                     "Original entry's data: key:{} path:{}, Entry to be registered: key:{} path:{}"
+            #                     .format(_output["key"], _output["path"], output["key"], output["path"]))
 
         return False
 
     @staticmethod
-    def insert_keyframe(obj: bpy.types.Object, data_path: str, frame: Optional[int] = None):
-        """ Inserts a keyframe for the given object and data path at the specified frame number:
+    def insert_keyframe(
+        obj: bpy.types.Object, data_path: str, frame: Optional[int] = None
+    ):
+        """Inserts a keyframe for the given object and data path at the specified frame number:
 
         :param obj: The blender object to use.
         :param data_path: The data path of the attribute.
@@ -574,8 +657,9 @@ class Utility:
         if frame is not None:
             obj.keyframe_insert(data_path=data_path, frame=frame)
 
+
 class BlockStopWatch:
-    """ Calls a print statement to mark the start and end of this block and also measures execution time.
+    """Calls a print statement to mark the start and end of this block and also measures execution time.
 
     Usage: with BlockStopWatch('text'):
     """
@@ -588,24 +672,35 @@ class BlockStopWatch:
         self.start = time.time()
 
     def __exit__(self, type, value, traceback):
-        print("#### Finished - " + self.block_name + " (took " + (
-                    "%.3f" % (time.time() - self.start)) + " seconds) ####")
+        print(
+            "#### Finished - "
+            + self.block_name
+            + " (took "
+            + ("%.3f" % (time.time() - self.start))
+            + " seconds) ####"
+        )
+
 
 class UndoAfterExecution:
-    """ Reverts all changes done to the blender project inside this block.
+    """Reverts all changes done to the blender project inside this block.
 
     Usage: with UndoAfterExecution():
     """
 
-    def __init__(self, check_point_name: Optional[str] = None, perform_undo_op: bool = True):
+    def __init__(
+        self, check_point_name: Optional[str] = None, perform_undo_op: bool = True
+    ):
         if check_point_name is None:
-            check_point_name = inspect.stack()[1].filename + " - " + inspect.stack()[1].function
+            check_point_name = (
+                inspect.stack()[1].filename + " - " + inspect.stack()[1].function
+            )
         self.check_point_name = check_point_name
         self._perform_undo_op = perform_undo_op
 
     def __enter__(self):
         if self._perform_undo_op:
             from blenderproc.python.types.StructUtility import Struct
+
             # Collect all existing struct instances
             self.struct_instances = get_instances()
             bpy.ops.ed.undo_push(message="before " + self.check_point_name)
@@ -620,6 +715,7 @@ class UndoAfterExecution:
             for name, struct in self.struct_instances:
                 struct.update_blender_ref(name)
 
+
 # KeyFrameState should be thread-specific
 class KeyFrameState(threading.local):
     def __init__(self):
@@ -632,7 +728,7 @@ class KeyFrame:
     state = KeyFrameState()
 
     def __init__(self, frame: int):
-        """ Sets the frame number for its complete block.
+        """Sets the frame number for its complete block.
 
         :param frame: The frame number to set. If None is given, nothing is changed.
         """
@@ -652,7 +748,7 @@ class KeyFrame:
 
     @staticmethod
     def is_any_active() -> bool:
-        """ Returns whether the current execution point is surrounded by a KeyFrame context manager.
+        """Returns whether the current execution point is surrounded by a KeyFrame context manager.
 
         :return: True, if there is at least one surrounding KeyFrame context manager
         """
@@ -660,7 +756,7 @@ class KeyFrame:
 
 
 class NumpyEncoder(json.JSONEncoder):
-    """ A json encoder that is also capable of serializing numpy arrays """
+    """A json encoder that is also capable of serializing numpy arrays"""
 
     def default(self, obj):
         # If its a numpy array
