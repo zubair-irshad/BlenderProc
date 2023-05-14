@@ -88,6 +88,7 @@ def main():
         if os.path.exists(yaml_path):
             all_frames.append(start_scene_idx + i)
 
+    print("all_frames", all_frames)
     worker_per_gpu = 1
     num_gpus = 6
 
@@ -95,6 +96,7 @@ def main():
     # all_frames = range(start_scene_idx, end_scene_idx)
     # print("workers", workers)
     frames_per_worker = math.ceil(len(all_frames) / workers)
+    print("frames_per_worker", frames_per_worker)
     gpu_start = 2
     # processes = []
     log_dir = "./scripts/logs"
@@ -116,7 +118,7 @@ def main():
             "--gpu",
             str(curr_gpu),
             "--frames",
-            all_frames[start:end],
+            str(all_frames[start:end]),
             # "--start",
             # str(start),
             # "--end",
