@@ -20,7 +20,7 @@ MODEL_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FUTURE-model"
 # MODEL_DIR = "/home/mirshad7/Downloads/3D-FUTURE-model"
 
 RENDER_TEMP_DIR = "./FRONT3D_render/temp"
-SCENE_LIST = []
+# SCENE_LIST = []
 
 
 def check_cache_dir(scene_idx):
@@ -109,7 +109,7 @@ def add_texture(obj: MeshObject, tex_path):
 
 
 # TODO: read config file
-def load_scene_objects(scene_idx, overwrite=False):
+def load_scene_objects(scene_idx, scene_list_all=None):
     check_cache_dir(scene_idx)
     mapping_file = bproc.utility.resolve_resource(
         os.path.join("front_3D", "3D_front_mapping.csv")
@@ -117,7 +117,7 @@ def load_scene_objects(scene_idx, overwrite=False):
     mapping = bproc.utility.LabelIdMapping.from_csv(mapping_file)
 
     loaded_objects = bproc.loader.load_front3d(
-        json_path=SCENE_LIST[scene_idx],
+        json_path=scene_list_all[scene_idx],
         future_model_path=MODEL_DIR,
         front_3D_texture_path=TEXTURE_DIR,
         label_mapping=mapping,
@@ -147,14 +147,14 @@ mapping_file = bproc.utility.resolve_resource(
 mapping = bproc.utility.LabelIdMapping.from_csv(mapping_file)
 
 
-def load_scene_objects_wotexture(scene_idx):
+def load_scene_objects_wotexture(scene_idx, scene_list_all):
     check_cache_dir(scene_idx)
     # mapping_file = bproc.utility.resolve_resource(
     #     os.path.join("front_3D", "3D_front_mapping.csv")
     # )
 
     loaded_objects = bproc.loader.load_front3d(
-        json_path=SCENE_LIST[scene_idx],
+        json_path=scene_list_all[scene_idx],
         future_model_path=MODEL_DIR,
         front_3D_texture_path=TEXTURE_DIR,
         label_mapping=mapping,

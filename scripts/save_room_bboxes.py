@@ -17,7 +17,7 @@ sys.path.append("./scripts")
 from blenderproc.python.sampler.Front3DPointInRoomSampler import (
     Front3DPointInRoomSampler,
 )
-
+from load_helper import load_scene_objects, build_and_save_scene_cache
 
 LAYOUT_DIR = "/home/mirshad7/Downloads/3D-FRONT"
 TEXTURE_DIR = "/home/mirshad7/Downloads/3D-FRONT-texture"
@@ -34,10 +34,10 @@ def check_cache_dir(scene_idx):
         os.makedirs(f"./cached/{scene_idx}")
 
 
-def load_scene_objects_wotexture(scene_idx):
+def load_scene_objects_wotexture(scene_idx, scene_list_all):
     check_cache_dir(scene_idx)
     loaded_objects = bproc.loader.load_front3d(
-        json_path=SCENE_LIST[scene_idx],
+        json_path=scene_list_all[scene_idx],
         future_model_path=MODEL_DIR,
         front_3D_texture_path=TEXTURE_DIR,
         label_mapping=mapping,
@@ -47,18 +47,16 @@ def load_scene_objects_wotexture(scene_idx):
     return loaded_objects
 
 
-SCENE_LIST = []
-
-
 def construct_scene_list():
+    scene_list_all = []
     """Construct a list of scenes and save to SCENE_LIST global variable."""
     scene_list = sorted([join(LAYOUT_DIR, name) for name in os.listdir(LAYOUT_DIR)])
     for scene_path in scene_list:
-        SCENE_LIST.append(scene_path)
-    print(f"SCENE_LIST is constructed. {len(SCENE_LIST)} scenes in total")
+        scene_list_all.append(scene_path)
+    print(f"SCENE_LIST is constructed. {len(scene_list_all)} scenes in total")
 
 
-construct_scene_list()
+scene_list_all = construct_scene_list()
 
 room_bboxes = {}
 
@@ -69,10 +67,16 @@ def parse_args():
     return parser.parse_args()
 
 
-def save_bbox(idx):
+def save_bbox_and_scene_cache(idx):
     # for idx in range(30):
     # scene_idx = 13
-    loaded_objects = load_scene_objects_wotexture(idx)
+
+    cache_dir = f"./cached/{idx}"
+    # loaded_objects = load_scene_objects_wotexture(idx, scene_list_all)
+
+    loaded_objects = load_scene_objects(idx, scene_list_all)
+    scene_objs_dict = build_and_save_scene_cache(cache_dir, loaded_objects)
+
     point_sampler = Front3DPointInRoomSampler(loaded_objects)
     floors = point_sampler.used_floors
     if len(floors) > 0:
@@ -88,7 +92,7 @@ def save_bbox(idx):
                 "bbox": [min_corner[:2].tolist(), max_corner[:2].tolist()]
             }
         save_path = os.path.join(
-            "/home/mirshad7/BlenderProc/scripts/all_bboxes",
+            "/home/mirshad7/BlenderProc/scripts/all_bboxes_w_cache",
             "bbox_" + str(idx) + ".yaml",
         )
         with open(save_path, "w") as file:
@@ -97,7 +101,7 @@ def save_bbox(idx):
 
 def main():
     args = parse_args()
-    save_bbox(args.scene_idx)
+    save_bbox_and_scene_cache(args.scene_idx)
 
 
 if __name__ == "__main__":
