@@ -68,6 +68,9 @@ def main():
     scene_objs_dict = build_and_save_scene_cache(cache_dir, scene_objects)
 
     for room_idx in room_config[args.scene_idx].keys():
+        print("==============Clearing Keyframaes")
+        # Clear all key frames from the previous run
+        bproc.utility.reset_keyframes()
         print("room idx", room_idx)
         dst_dir = join(
             args.render_root, "3dfront_{:04d}_{:02}".format(args.scene_idx, room_idx)
