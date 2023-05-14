@@ -126,7 +126,7 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser(description="")
     parser.add_argument("-s", "--scene_idx", type=int, required=True)
-    parser.add_argument("-r", "--room_idx", type=int, required=True)
+    parser.add_argument("-r", "--room_idx", type=int, required=False)
     parser.add_argument(
         "--mode",
         type=str,
