@@ -4,7 +4,7 @@ import subprocess
 
 
 def main(args):
-    for scene_idx in range(args.start, args.end):
+    for scene_idx in args.frames:
         cmd = f"CUDA_VISIBLE_DEVICES={args.gpu} python cli.py run ./scripts/render_scene.py -s {scene_idx} --gpu {args.gpu}"
         subprocess.run(cmd, shell=True)
 
@@ -12,11 +12,11 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--start", default=0, type=int, help="Is tested on validation data or not."
+        "--frames", default=0, type=list, help="Is tested on validation data or not."
     )
-    parser.add_argument(
-        "--end", default=0, type=int, help="Is tested on validation data or not."
-    )
+    # parser.add_argument(
+    #     "--end", default=0, type=int, help="Is tested on validation data or not."
+    # )
     parser.add_argument(
         "--gpu", default=0, type=int, help="Is tested on validation data or not."
     )

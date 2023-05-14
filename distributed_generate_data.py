@@ -81,11 +81,18 @@ def main():
 
     start_scene_idx = 2000
     end_scene_idx = 2100
+    path = "./scripts/all_bboxes"
+    all_frames = []
+    for i in range(start_scene_idx, end_scene_idx):
+        yaml_path = os.path.join(path, "bbox_" + str(i) + ".yaml")
+        if os.path.exists(yaml_path):
+            all_frames.append(start_scene_idx + i)
+
     worker_per_gpu = 1
     num_gpus = 6
 
     workers = num_gpus * worker_per_gpu
-    all_frames = range(start_scene_idx, end_scene_idx)
+    # all_frames = range(start_scene_idx, end_scene_idx)
     # print("workers", workers)
     frames_per_worker = math.ceil(len(all_frames) / workers)
     gpu_start = 2
@@ -108,10 +115,12 @@ def main():
             "distributed_worker.py",
             "--gpu",
             str(curr_gpu),
-            "--start",
-            str(start),
-            "--end",
-            str(end),
+            "--frames",
+            all_frames[start:end],
+            # "--start",
+            # str(start),
+            # "--end",
+            # str(end),
         ]
         log_file = os.path.join(log_dir, f"log_{i}.txt")
         log = open(log_file, "w")
