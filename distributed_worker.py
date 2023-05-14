@@ -14,7 +14,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--frames", type=list, help="Is tested on validation data or not."
+        "--frames", type=str, help="Is tested on validation data or not."
     )
     # parser.add_argument(
     #     "--end", default=0, type=int, help="Is tested on validation data or not."
