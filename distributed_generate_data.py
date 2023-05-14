@@ -86,8 +86,7 @@ def main():
     for i in range(start_scene_idx, end_scene_idx):
         yaml_path = os.path.join(path, "bbox_" + str(i) + ".yaml")
         if os.path.exists(yaml_path):
-            print("start_scene_idx + i", start_scene_idx + i, start_scene_idx, i)
-            all_frames.append(start_scene_idx + i)
+            all_frames.append(i)
 
     print("all_frames", all_frames)
     worker_per_gpu = 1
@@ -112,6 +111,7 @@ def main():
         print("start, : end", start, end)
 
         my_env = os.environ.copy()
+        frames_str = ",".join(str(f) for f in all_frames[start:end])
         my_env["CUDA_VISIBLE_DEVICES"] = str(curr_gpu)
         command = [
             "python",
@@ -119,7 +119,7 @@ def main():
             "--gpu",
             str(curr_gpu),
             "--frames",
-            str(all_frames[start:end]),
+            frames_str,
             # "--start",
             # str(start),
             # "--end",
