@@ -32,8 +32,8 @@ import argparse
 import sys
 
 sys.path.append("./scripts")
-from utils.pose_utils import *
-from utils.front3d_utils import *
+from render_utils.pose_utils import *
+from render_utils.front3d_utils import *
 from load_helper import load_scene_objects
 from utils import build_and_save_scene_cache
 
