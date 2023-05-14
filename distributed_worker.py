@@ -4,7 +4,7 @@ import subprocess
 
 
 def main(args):
-    for scene_idx in range(args.start_idx, args.end_idx):
+    for scene_idx in range(args.start, args.end):
         cmd = f"CUDA_VISIBLE_DEVICES={args.gpu} python cli.py run ./scripts/render_scene.py -s {scene_idx} --gpu {args.gpu}"
         subprocess.run(cmd, shell=True)
 

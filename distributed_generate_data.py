@@ -80,7 +80,7 @@ def main():
     #     proc.wait()
 
     start_scene_idx = 2000
-    end_scene_idx = 3000
+    end_scene_idx = 2100
     worker_per_gpu = 1
     num_gpus = 6
 
@@ -90,6 +90,7 @@ def main():
     frames_per_worker = math.ceil(len(all_frames) / workers)
     gpu_start = 2
     # processes = []
+    log_dir = "./scripts/logs"
     for i in range(workers):
         curr_gpu = (i // worker_per_gpu) + gpu_start
 
@@ -112,7 +113,8 @@ def main():
             "--end",
             str(end),
         ]
-        log = open("worker_{}.txt".format(i), "w")
+        log_file = os.path.join(log_dir, f"log_{i}.txt")
+        log = open(log_file, "w")
         print(command)
         Popen(command, env=my_env, stderr=log, stdout=log)
 
