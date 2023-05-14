@@ -86,6 +86,7 @@ def main():
     for i in range(start_scene_idx, end_scene_idx):
         yaml_path = os.path.join(path, "bbox_" + str(i) + ".yaml")
         if os.path.exists(yaml_path):
+            print("start_scene_idx + i", start_scene_idx + i, start_scene_idx, i)
             all_frames.append(start_scene_idx + i)
 
     print("all_frames", all_frames)
