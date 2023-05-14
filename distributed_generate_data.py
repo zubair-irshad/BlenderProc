@@ -1,5 +1,7 @@
+# import subprocess
+# import multiprocessing
+import os
 import subprocess
-import multiprocessing
 
 
 def process_scene(gpu_id, scene_idx):
@@ -51,9 +53,9 @@ def main():
     # # create a list of GPU ids to use
     # gpu_ids = list(range(2, 8))
 
-    with multiprocessing.Pool(6) as pool:
-        for scene_idx in range(2000, 3000):
-            pool.starmap(process_scene, [(gpu_id, scene_idx) for gpu_id in range(2, 8)])
+    # with multiprocessing.Pool(6) as pool:
+    #     for scene_idx in range(2000, 3000):
+    #         pool.starmap(process_scene, [(gpu_id, scene_idx) for gpu_id in range(2, 8)])
 
     # start_scene_idx = 2000
     # end_scene_idx = 3000
@@ -78,7 +80,26 @@ def main():
     #     proc.wait()
 
     # worker_per_gpu = 1
-    # workers = torch.cuda.device_count() * worker_per_gpu
+    # workers = 6 * worker_per_gpu
+
+    num_gpus = 6
+    gpu_ids = list(range(2, 2 + num_gpus))
+
+    procs = []
+    for i, gpu_id in enumerate(gpu_ids):
+        env = os.environ.copy()
+        env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+
+        for scene_idx in range(2000, 3000, num_gpus):
+            cmd = f"CUDA_VISIBLE_DEVICES={gpu_id} python cli.py run ./scripts/render_scene.py -s {scene_idx} --gpu {gpu_id}"
+            proc = subprocess.Popen(cmd, shell=True, env=env)
+            procs.append(proc)
+
+        # Wait for all processes to finish before moving on to the next GPU
+        for proc in procs:
+            proc.wait()
+        procs.clear()
+
     # print("workers", workers)
     # all_frames = range(0, len(scene_lists))
     # frames_per_worker = math.ceil(len(all_frames) / workers)
