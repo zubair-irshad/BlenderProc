@@ -17,7 +17,8 @@ sys.path.append("./scripts")
 from blenderproc.python.sampler.Front3DPointInRoomSampler import (
     Front3DPointInRoomSampler,
 )
-from load_helper import load_scene_objects, build_and_save_scene_cache
+from load_helper import load_scene_objects
+from utils import build_and_save_scene_cache
 
 LAYOUT_DIR = "/home/mirshad7/Downloads/3D-FRONT"
 TEXTURE_DIR = "/home/mirshad7/Downloads/3D-FRONT-texture"
