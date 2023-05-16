@@ -17,13 +17,13 @@ MODEL_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FUTURE-model"
 
 
 RENDER_TEMP_DIR = "./FRONT3D_render/temp"
-# IMG_WIDTH = 640
-# IMG_HEIGHT = 480
-# K = np.array([[400, 0, 320], [0, 400, 240], [0, 0, 1]])
+IMG_WIDTH = 640
+IMG_HEIGHT = 480
+K = np.array([[400, 0, 320], [0, 400, 240], [0, 0, 1]])
 
-IMG_WIDTH = 320
-IMG_HEIGHT = 240
-K = np.array([[200, 0, 160], [0, 200, 120], [0, 0, 1]])
+# IMG_WIDTH = 320
+# IMG_HEIGHT = 240
+# K = np.array([[200, 0, 160], [0, 200, 120], [0, 0, 1]])
 
 
 def construct_scene_list():
