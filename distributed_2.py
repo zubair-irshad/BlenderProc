@@ -95,7 +95,7 @@ if __name__ == "__main__":
     # model_keys = list(model_paths.keys())
 
     for item in scene_ids:
-        queue.put(scene_ids[item])
+        queue.put(item)
 
     # Wait for all tasks to be completed
     queue.join()
