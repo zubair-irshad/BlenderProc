@@ -21,6 +21,7 @@ for folder in os.listdir(folder_path):
             if file_count > 80 and file_count < 600:
                 count += 1
             if file_count > 600:
+                print("folder, file_count", folder, file_count)
                 countg600 += 1
 
             elif file_count < 80:
