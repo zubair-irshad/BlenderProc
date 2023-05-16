@@ -11,9 +11,9 @@ import json
 # TEXTURE_DIR = '/data/yliugu/3D-FRONT-texture'
 # MODEL_DIR = '/data/yliugu/3D-FUTURE-model'
 
-LAYOUT_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT"
-TEXTURE_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT-texture"
-MODEL_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FUTURE-model"
+# LAYOUT_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT"
+# TEXTURE_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT-texture"
+# MODEL_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FUTURE-model"
 
 # LAYOUT_DIR = "/home/mirshad7/Downloads/3D-FRONT"
 # TEXTURE_DIR = "/home/mirshad7/Downloads/3D-FRONT-texture"
