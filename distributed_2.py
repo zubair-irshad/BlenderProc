@@ -39,18 +39,7 @@ def worker(
 
         # Perform some operation on the item
         print(item, gpu)
-        command = [
-            "python",
-            "cli.py",
-            "run",
-            "./scripts/render_scene.py",
-            "-s",
-            str(item),
-            "--mode",
-            "render",
-            "--gpu",
-            str(gpu),
-        ]
+        command = f"CUDA_VISIBLE_DEVICES={gpu} python cli.py run ./scripts/render_scene.py -s {item} --gpu {gpu}"
 
         #     # f"export DISPLAY=:0.{gpu} &&"
         #     # f" GOMP_CPU_AFFINITY='0-47' OMP_NUM_THREADS=48 OMP_SCHEDULE=STATIC OMP_PROC_BIND=CLOSE "
