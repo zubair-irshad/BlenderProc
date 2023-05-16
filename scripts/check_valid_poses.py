@@ -1,3 +1,4 @@
+import blenderproc as bproc
 import sys
 from os.path import join
 import yaml
