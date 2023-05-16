@@ -9,6 +9,71 @@ import argparse
 def parse_args():
     parser = argparse.ArgumentParser(description="")
     parser.add_argument("--scene_idx", type=int, required=True)
+    parser.add_argument(
+        "-ppo",
+        "--pos_per_obj",
+        type=int,
+        default=15,
+        help="Number of close-up poses for each object.",
+    )
+    parser.add_argument(
+        "-gp",
+        "--max_global_pos",
+        type=int,
+        default=150,
+        help="Max number of global poses.",
+    )
+    parser.add_argument(
+        "-gd",
+        "--global_density",
+        type=float,
+        default=0.15,
+        help="The radius interval of global poses. Smaller global_density -> more global views",
+    )
+    parser.add_argument(
+        "-nc",
+        "--no_check",
+        action="store_true",
+        default=True,
+        help="Do not check the poses. Render directly.",
+    )
+    parser.add_argument("--gpu", type=str, default="1")
+    parser.add_argument(
+        "--relabel",
+        action="store_true",
+        help="Relabel the objects in the scene by rewriting transforms.json.",
+    )
+    parser.add_argument(
+        "--rotation",
+        action="store_true",
+        help="output rotation bounding boxes if it is true.",
+    )
+    parser.add_argument(
+        "--bbox_type",
+        type=str,
+        default="obb",
+        choices=["aabb", "obb"],
+        help="Output aabb or obb",
+    )
+    parser.add_argument(
+        "--render_root",
+        type=str,
+        default="/wild6d_data/zubair/FRONT3D_render",
+        help="Output directory. If not specified, use the default directory.",
+    )
+
+    parser.add_argument(
+        "--seg_res",
+        type=int,
+        default=256,
+        help="The max grid resolution for 3D segmentation map.",
+    )
+    parser.add_argument(
+        "--pose_dir",
+        type=str,
+        default="",
+        help="The directory containing the poses (transforms.json) for 2D mask rendering.",
+    )
 
 
 import sys
