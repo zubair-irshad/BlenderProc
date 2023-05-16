@@ -173,7 +173,7 @@ def check_valid_poses(scene_idx):
             room_config=room_config,
         )
 
-        value = True if len(poses) > 80 or len(poses) < 450 else False
+        value = True if (len(poses) > 80 and len(poses) < 450) else False
         all_value = all_value and value
 
     data = {"value": all_value}
