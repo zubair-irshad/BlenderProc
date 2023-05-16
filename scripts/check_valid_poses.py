@@ -114,10 +114,10 @@ scene_list_all = construct_scene_list()
 room_bboxes = {}
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="")
-    parser.add_argument("--scene_idx", type=int, required=True)
-    return parser.parse_args()
+# def parse_args():
+#     parser = argparse.ArgumentParser(description="")
+#     parser.add_argument("--scene_idx", type=int, required=True)
+#     return parser.parse_args()
 
 
 def check_valid_poses(scene_idx):
