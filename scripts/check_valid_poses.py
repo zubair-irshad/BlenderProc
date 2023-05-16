@@ -75,6 +75,8 @@ def parse_args():
         help="The directory containing the poses (transforms.json) for 2D mask rendering.",
     )
 
+    return parser.parse_args()
+
 
 import sys
 
