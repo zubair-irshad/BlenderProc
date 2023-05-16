@@ -1,10 +1,7 @@
-import blenderproc as bproc
-import numpy as np
 import sys
 from os.path import join
 import yaml
 import os
-import json
 import argparse
 
 
@@ -29,12 +26,6 @@ from utils import build_and_save_scene_cache
 LAYOUT_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT"
 TEXTURE_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FRONT-texture"
 MODEL_DIR = "/wild6d_data/zubair/3DFRONT_Raw/3D-FUTURE-model"
-
-
-mapping_file = bproc.utility.resolve_resource(
-    os.path.join("front_3D", "3D_front_mapping.csv")
-)
-mapping = bproc.utility.LabelIdMapping.from_csv(mapping_file)
 
 
 def check_cache_dir(scene_idx):
@@ -84,12 +75,7 @@ def check_valid_poses(scene_idx):
     for room_idx in room_config[scene_idx].keys():
         print("==============Clearing Keyframaes")
         # Clear all key frames from the previous run
-        bproc.utility.reset_keyframes()
         print("room idx", room_idx)
-        dst_dir = join(
-            args.render_root, "3dfront_{:04d}_{:02}".format(args.scene_idx, room_idx)
-        )
-        os.makedirs(dst_dir, exist_ok=True)
 
         room_bbox = get_room_bbox(
             args.scene_idx,
