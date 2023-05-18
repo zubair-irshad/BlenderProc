@@ -39,7 +39,7 @@ def init(clean_up_scene: bool = True, gpu_id: int = 0):
     bpy.context.scene.render.engine = 'CYCLES'
 
     # Set default render devices
-    RendererUtility.set_render_devices(gpu_id = gpu_id)
+    RendererUtility.set_render_devices(desired_gpu_ids = gpu_id)
 
     # Set default parameters
     _Initializer.set_default_parameters()
