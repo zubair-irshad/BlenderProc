@@ -635,6 +635,8 @@ def render(output_dir: Optional[str] = None, file_prefix: str = "rgb_", output_k
     :param verbose: If True, more details about the rendering process are printed.
     :return: dict of lists of raw renderer output. Keys can be 'distance', 'colors', 'normals'
     """
+
+    print("HEREEEEEEEEEEEEEEEEEEEEE")
     if output_dir is None:
         output_dir = Utility.get_temporary_directory()
     if load_keys is None:
@@ -663,7 +665,9 @@ def render(output_dir: Optional[str] = None, file_prefix: str = "rgb_", output_k
             registered_output_keys = [output["key"] for output in Utility.get_registered_outputs()]
             keys_to_render = sorted([key for key in load_keys if key in registered_output_keys])
             print(f"Rendering {total_frames} frames of {', '.join(keys_to_render)}...")
+        
 
+        print("HEREEEEEEEEEEEEEEEEEEEEE")
         # As frame_end is pointing to the next free frame, decrease it by one, as
         # blender will render all frames in [frame_start, frame_ned]
         bpy.context.scene.frame_end -= 1
