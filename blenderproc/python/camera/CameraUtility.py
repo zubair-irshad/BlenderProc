@@ -1,9 +1,13 @@
+"""Camera utility, collection of useful camera functions."""
+from typing import Union, Tuple, Optional, List
+from itertools import product
+
 import bpy
-import numpy as np
 from mathutils import Matrix, Vector, Euler
-from typing import Union, Tuple, Optional
+import numpy as np
 
 from blenderproc.python.types.EntityUtility import Entity
+from blenderproc.python.types.MeshObjectUtility import MeshObject, create_primitive
 from blenderproc.python.utility.Utility import KeyFrame
 
 
@@ -37,11 +41,82 @@ def add_camera_pose(cam2world_matrix: Union[np.ndarray, Matrix], frame: Optional
 def get_camera_pose(frame: Optional[int] = None) -> np.ndarray:
     """ Returns the camera pose in the form of a 4x4 cam2world transformation matrx.
 
-    :param frame: The frame number whose assigned camera pose should be returned. If None is give, the current frame is used.
+    :param frame: The frame number whose assigned camera pose should be returned. If None is give, the current frame
+                  is used.
     :return: The 4x4 cam2world transformation matrix.
     """
     with KeyFrame(frame):
         return np.array(Entity(bpy.context.scene.camera).get_local2world_mat())
+
+
+def get_camera_frustum(clip_start: Optional[float] = None, clip_end: Optional[float] = None,
+                       frame: Optional[int] = None) -> np.ndarray:
+    """ Get the current camera frustum as eight 3D coordinates.
+
+    :param clip_start: The distance between the camera pose and the near clipping plane.
+    :param clip_end: The distance between the camera pose and the far clipping plane.
+    :param frame: The frame number whose assigned camera pose should be used. If None is give, the current frame
+                  is used.
+    :return: The eight 3D coordinates of the camera frustum
+    """
+    poses = np.array(list(product((-1, 1), repeat=3)))
+    poses = np.concatenate([poses, np.ones((8, 1))], axis=1)
+
+    # get the current camera pose
+    camera_pose = get_camera_pose(frame)
+
+    # get the projection matrix
+    projection_matrix = get_projection_matrix(clip_start, clip_end)
+
+    # bring the camera frustum points into the world frame
+    poses = poses @ np.linalg.inv(projection_matrix).transpose()
+    poses /= poses[:, 3:]
+    poses = poses @ camera_pose.transpose()
+    poses /= poses[:, 3:]
+    return poses[:, :3]
+
+
+def is_point_inside_camera_frustum(point: Union[List[float], Vector, np.ndarray],
+                                   clip_start: Optional[float] = None, clip_end: Optional[float] = None,
+                                   frame: Optional[int] = None) -> bool:
+    """ Checks if a given 3D point lies inside the camera frustum.
+
+    :param point: The point, which should be checked
+    :param clip_start: The distance between the camera pose and the near clipping plane.
+    :param clip_end: The distance between the camera pose and the far clipping plane.
+    :param frame: The frame number whose assigned camera pose should be used. If None is give, the current frame
+                  is used.
+    :return: True, if the point lies inside the camera frustum, else False
+    """
+    camera_pose = get_camera_pose(frame)
+
+    point4d = np.insert(np.array(point), 3, 1, axis=0)
+    point4d = point4d @ np.linalg.inv(camera_pose).transpose()
+    point4d /= point4d[3]
+    projection_matrix = get_projection_matrix(clip_start, clip_end)
+    point4d = point4d @ projection_matrix.transpose()
+    point4d /= point4d[3]
+    point4d = point4d[:3]
+
+    return np.all([point4d < 1, -1 < point4d])
+
+
+def get_camera_frustum_as_object(clip_start: Optional[float] = None, clip_end: Optional[float] = None,
+                                 frame: Optional[int] = None) -> MeshObject:
+    """ Get the current camera frustum as deformed cube
+
+    :param clip_start: The distance between the camera pose and the near clipping plane.
+    :param clip_end: The distance between the camera pose and the far clipping plane.
+    :param frame: The frame number whose assigned camera pose should be used. If None is give, the current frame
+                  is used.
+    :return: The newly created MeshObject
+    """
+    points = get_camera_frustum(clip_start, clip_end, frame)
+    cube = create_primitive("CUBE")
+    cube.set_name("Camera Frustum")
+    for i in range(8):
+        cube.get_mesh().vertices[i].co = points[i]
+    return cube
 
 
 def rotation_from_forward_vec(forward_vec: Union[np.ndarray, Vector], up_axis: str = 'Y',
@@ -50,26 +125,29 @@ def rotation_from_forward_vec(forward_vec: Union[np.ndarray, Vector], up_axis: s
 
     :param forward_vec: The forward vector which specifies the direction the camera should look.
     :param up_axis: The up axis, usually Y.
-    :param inplane_rot: The inplane rotation in radians. If None is given, the inplane rotation is determined only based on the up vector.
+    :param inplane_rot: The inplane rotation in radians. If None is given, the inplane rotation is determined only
+                        based on the up vector.
     :return: The corresponding rotation matrix.
     """
     rotation_matrix = Vector(forward_vec).to_track_quat('-Z', up_axis).to_matrix()
     if inplane_rot is not None:
-        rotation_matrix = rotation_matrix @ Euler((0.0, 0.0, inplane_rot)).to_matrix()
+        rotation_matrix @= Euler((0.0, 0.0, inplane_rot)).to_matrix()
     return np.array(rotation_matrix)
 
 
 def set_resolution(image_width: int = None, image_height: int = None):
     """ Sets the camera resolution.
-    
+
     :param image_width: The image width in pixels.
     :param image_height: The image height in pixels.
     """
     set_intrinsics_from_blender_params(None, image_width, image_height)
 
 
-def set_intrinsics_from_blender_params(lens: float = None, image_width: int = None, image_height: int = None, clip_start: float = None, clip_end: float = None, 
-                                       pixel_aspect_x: float = None, pixel_aspect_y: float = None, shift_x: int = None, shift_y: int = None, lens_unit: str = None):
+def set_intrinsics_from_blender_params(lens: float = None, image_width: int = None, image_height: int = None,
+                                       clip_start: float = None, clip_end: float = None,
+                                       pixel_aspect_x: float = None, pixel_aspect_y: float = None, shift_x: int = None,
+                                       shift_y: int = None, lens_unit: str = None):
     """ Sets the camera intrinsics using blenders represenation.
 
     :param lens: Either the focal length in millimeters or the FOV in radians, depending on the given lens_unit.
@@ -81,15 +159,16 @@ def set_intrinsics_from_blender_params(lens: float = None, image_width: int = No
     :param pixel_aspect_y: The pixel aspect ratio along y.
     :param shift_x: The shift in x direction.
     :param shift_y: The shift in y direction.
-    :param lens_unit: Either FOV or MILLIMETERS depending on whether the lens is defined as focal length in millimeters or as FOV in radians.
+    :param lens_unit: Either FOV or MILLIMETERS depending on whether the lens is defined as focal length in
+                      millimeters or as FOV in radians.
     """
-    
+
     cam_ob = bpy.context.scene.camera
     cam = cam_ob.data
 
     if lens_unit is not None:
         cam.lens_unit = lens_unit
-        
+
     if lens is not None:
         # Set focal length
         if cam.lens_unit == 'MILLIMETERS':
@@ -106,7 +185,7 @@ def set_intrinsics_from_blender_params(lens: float = None, image_width: int = No
         bpy.context.scene.render.resolution_x = image_width
     if image_height is not None:
         bpy.context.scene.render.resolution_y = image_height
-        
+
     # Set clipping
     if clip_start is not None:
         cam.clip_start = clip_start
@@ -129,8 +208,11 @@ def set_intrinsics_from_blender_params(lens: float = None, image_width: int = No
 def set_stereo_parameters(convergence_mode: str, convergence_distance: float, interocular_distance: float):
     """ Sets the stereo parameters of the camera.
 
-    :param convergence_mode: How the two cameras converge (e.g. Off-Axis where both cameras are shifted inwards to converge in the convergence plane, or parallel where they do not converge and are parallel). Available: ["OFFAXIS", "PARALLEL", "TOE"]
-    :param convergence_distance: The convergence point for the stereo cameras (i.e. distance from the projector to the projection screen)
+    :param convergence_mode: How the two cameras converge (e.g. Off-Axis where both cameras are shifted inwards to
+                             converge in the convergence plane, or parallel where they do not converge and are
+                             parallel). Available: ["OFFAXIS", "PARALLEL", "TOE"]
+    :param convergence_distance: The convergence point for the stereo cameras (i.e. distance from the projector
+                                 to the projection screen)
     :param interocular_distance: Distance between the camera pair
     """
     cam_ob = bpy.context.scene.camera
@@ -161,11 +243,11 @@ def set_intrinsics_from_K_matrix(K: Union[np.ndarray, Matrix], image_width: int,
 
     K = Matrix(K)
 
-    cam_ob = bpy.context.scene.camera
-    cam = cam_ob.data
+    cam = bpy.context.scene.camera.data
 
     if abs(K[0][1]) > 1e-7:
-        raise Exception(f"Skew is not supported by blender and therefore nor by BlenderProc, set this to zero: {K[0][1]} and recalibrate")
+        raise ValueError(f"Skew is not supported by blender and therefore "
+                         f"not by BlenderProc, set this to zero: {K[0][1]} and recalibrate")
 
     fx, fy = K[0][0], K[1][1]
     cx, cy = K[0][2], K[1][2]
@@ -190,7 +272,8 @@ def set_intrinsics_from_K_matrix(K: Union[np.ndarray, Matrix], image_width: int,
     shift_y = (cy - (image_height - 1) / 2) / view_fac_in_px * pixel_aspect_ratio
 
     # Finally set all intrinsics
-    set_intrinsics_from_blender_params(f_in_mm, image_width, image_height, clip_start, clip_end, pixel_aspect_x, pixel_aspect_y, shift_x, shift_y, "MILLIMETERS")
+    set_intrinsics_from_blender_params(f_in_mm, image_width, image_height, clip_start, clip_end, pixel_aspect_x,
+                                       pixel_aspect_y, shift_x, shift_y, "MILLIMETERS")
 
 
 def get_sensor_size(cam: bpy.types.Camera) -> float:
@@ -236,6 +319,32 @@ def get_view_fac_in_px(cam: bpy.types.Camera, pixel_aspect_x: float, pixel_aspec
     return view_fac_in_px
 
 
+def get_projection_matrix(clip_start: Optional[float] = None, clip_end: Optional[float] = None) -> np.ndarray:
+    """ Returns the projection matrix, it allows to overwrite the current used values for the near and far
+    clipping plane.
+
+    :param clip_start: The distance between the camera pose and the near clipping plane.
+    :param clip_end: The distance between the camera pose and the far clipping plane.
+    :return: The 4x4 projection matrix of the current camera
+    """
+    if clip_start is None:
+        near = bpy.context.scene.camera.data.clip_start
+    else:
+        near = clip_start
+    if clip_end is None:
+        far = bpy.context.scene.camera.data.clip_end
+    else:
+        far = clip_end
+    # get the field of view
+    x_fov, y_fov = get_fov()
+    # convert them to height and width values
+    height, width = 1.0 / np.tan(y_fov * 0.5), 1. / np.tan(x_fov * 0.5)
+    # build up the projection matrix
+    return np.array([[width, 0, 0, 0], [0, height, 0, 0],
+                     [0, 0, -(near + far) / (far - near), -(2 * near * far) / (far - near)],
+                     [0, 0, -1, 0]])
+
+
 def get_intrinsics_as_K_matrix() -> np.ndarray:
     """ Returns the current set intrinsics in the form of a K matrix.
 
@@ -252,7 +361,8 @@ def get_intrinsics_as_K_matrix() -> np.ndarray:
 
     # Compute sensor size in mm and view in px
     pixel_aspect_ratio = bpy.context.scene.render.pixel_aspect_y / bpy.context.scene.render.pixel_aspect_x
-    view_fac_in_px = get_view_fac_in_px(cam, bpy.context.scene.render.pixel_aspect_x, bpy.context.scene.render.pixel_aspect_y, resolution_x_in_px, resolution_y_in_px)
+    view_fac_in_px = get_view_fac_in_px(cam, bpy.context.scene.render.pixel_aspect_x,
+                                        bpy.context.scene.render.pixel_aspect_y, resolution_x_in_px, resolution_y_in_px)
     sensor_size_in_mm = get_sensor_size(cam)
 
     # Convert focal length in mm to focal length in px

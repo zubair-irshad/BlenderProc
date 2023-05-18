@@ -1,4 +1,7 @@
+""" Allows the sampling in Replica scenes """
+
 import ast
+from typing import Union, List, Dict
 import random
 import numpy as np
 
@@ -6,20 +9,25 @@ from blenderproc.python.types.MeshObjectUtility import MeshObject
 
 
 class ReplicaPointInRoomSampler:
+    """
+    Allows the sampling in Replica scenes
+    """
 
-    def __init__(self, replica_mesh: MeshObject, replica_floor: MeshObject, height_list_file_path: str):
+    def __init__(self, room_bounding_box: Dict[str, np.ndarray], replica_floor: Union[MeshObject, List[MeshObject]],
+                 height_list_file_path: str):
         """ Collect object containing all floors of all rooms and read in text file containing possible height values.
 
-        :param replica_mesh: The replica mesh object.
+        :param room_bounding_box: The bounding box of the room, needs a min key and max key, representing the edges of
+                                  the room bounding box
         :param replica_floor: The replica floor object.
         :param height_list_file_path: The path to the file containing possible height values.
         """
-        # Determine bounding box of the scene
-        bounding_box = replica_mesh.get_bound_box()
-        self.bounding_box = {"min": bounding_box[0], "max": bounding_box[-2]}
+        self.bounding_box = room_bounding_box
         self.floor_object = replica_floor
+        if isinstance(self.floor_object, list) and not self.floor_object:
+            raise Exception("The floor object list can not be empty!")
 
-        with open(height_list_file_path) as file:
+        with open(height_list_file_path, "r", encoding="utf-8") as file:
             self.floor_height_values = [float(val) for val in ast.literal_eval(file.read())]
 
     def sample(self, height: float, max_tries: int = 1000) -> np.ndarray:
@@ -41,8 +49,14 @@ class ReplicaPointInRoomSampler:
                 self.floor_height_values[random.randrange(0, len(self.floor_height_values))] + height
             ])
 
-            # Check if sampled pose is above the floor to make sure its really inside the room
-            if self.floor_object.position_is_above_object(point):
-                return point
+            if isinstance(self.floor_object, list):
+                for floor_object in self.floor_object:
+                    # Check if sampled pose is above the floor to make sure it is really inside the room
+                    if floor_object.position_is_above_object(point):
+                        return point
+            else:
+                # Check if sampled pose is above the floor to make sure it is really inside the room
+                if self.floor_object.position_is_above_object(point):
+                    return point
 
         raise Exception("Cannot sample any point inside the loaded replica rooms.")

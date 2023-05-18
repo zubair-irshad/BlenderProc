@@ -1,141 +1,52 @@
+""" This module provides functions to init a BlenderProc scene. """
+
 import os
 import random
+
 from numpy import random as np_random
-from sys import platform
-
-import multiprocessing
-
 import bpy
-import blenderproc.python.camera.CameraUtility as CameraUtility
+
+from blenderproc.python.modules.main.GlobalStorage import GlobalStorage
+from blenderproc.python.utility.Utility import reset_keyframes
+from blenderproc.python.camera import CameraUtility
 from blenderproc.python.utility.DefaultConfig import DefaultConfig
-
-import addon_utils
-
-import blenderproc.python.renderer.RendererUtility as RendererUtility
+from blenderproc.python.renderer import RendererUtility
 
 
-def init(
-    horizon_color: list = [0.05, 0.05, 0.05],
-    compute_device: str = "GPU",
-    compute_device_type: str = None,
-    use_experimental_features: bool = False,
-    clean_up_scene: bool = True,
-):
-    """Initializes basic blender settings, the world and the camera.
+def init(clean_up_scene: bool = True):
+    """ Initializes BlenderProc.
 
-    Also cleans up the whole scene at first.
+    Cleans up the whole scene at first and then initializes basic blender settings, the world, the renderer and
+    the camera. This method should only be called once in the beginning. If you want to clean up the scene afterwards,
+    use bproc.clean_up()
 
-    :param horizon_color: The color to use for the world background.
-    :param compute_device: The compute device to use for the Cycles Render Engine i.e. CPU or GPU. (default: ``GPU``).
-    :param compute_device_type: The compute device type to use for the Cycles Render Engine i.e. OPTIX or CUDA. Only necessary to specify, if compute device is GPU. If None is given, the available device type is used (OPTIX is preferred).
-    :param use_experimental_features: Set to True, if you want to use the Experimental features of the Cycles Render Engine i.e Adaptive subdivision. (default: ``False``).
     :param clean_up_scene: Set to False, if you want to keep all scene data.
     """
-    print("==========================================================\n\n\n")
-    print("HEREEEEEEEEEEEEEEEEEEEEEEE,,,,,,,,,,,,,,,,,,,,,,,,,,,")
-    print("==========================================================\n\n\n")
+    # Check if init has already been run
+    if GlobalStorage.is_in_storage("bproc_init_complete") and GlobalStorage.get("bproc_init_complete"):
+        raise RuntimeError("BlenderProc has already been initialized via bproc.init(), this should not be done twice. "
+                           "If you want to clean up the scene, use bproc.clean_up().")
+
     if clean_up_scene:
-        cleanup()
+        clean_up(clean_up_camera=True)
 
     # Set language if necessary
     if bpy.context.preferences.view.language != "en_US":
         print("Setting blender language settings to english during this run")
         bpy.context.preferences.view.language = "en_US"
 
-    prefs = bpy.context.preferences.addons["cycles"].preferences
     # Use cycles
-    bpy.context.scene.render.engine = "CYCLES"
+    bpy.context.scene.render.engine = 'CYCLES'
 
-    if platform == "darwin":
-        import platform as platform_locally
+    # Set default render devices
+    RendererUtility.set_render_devices()
 
-        mac_version = platform_locally.mac_ver()[0]
-        mac_version_numbers = [int(ele) for ele in mac_version.split(".")]
-        if (
-            mac_version_numbers[0] == 12 and mac_version_numbers[1] >= 3
-        ) or mac_version_numbers[0] > 12:
-            bpy.context.scene.cycles.device = "GPU"
-            preferences = bpy.context.preferences.addons["cycles"].preferences
-            for device_type in preferences.get_device_types(bpy.context):
-                preferences.get_devices_for_type(device_type[0])
-            gpu_type = "METAL"  # only available type on mac os
-            for device in preferences.devices:
-                print("platform", platform)
-                print("device", device.name, device.type)
-                if device.type == gpu_type and (
-                    compute_device_type is None or compute_device_type == gpu_type
-                ):
-                    bpy.context.preferences.addons[
-                        "cycles"
-                    ].preferences.compute_device_type = gpu_type
-                    print(
-                        "Device {} of type {} found and used.".format(
-                            device.name, device.type
-                        )
-                    )
-                    break
-            # make sure that all visible GPUs are used
-            for device in prefs.devices:
-                device.use = True
-        else:
-            # there is no gpu support on mac os below 12.3, if cpu is specified as compute device,
-            # then we use the cpu with maximum power
-            bpy.context.scene.cycles.device = "CPU"
-            bpy.context.scene.render.threads = multiprocessing.cpu_count()
-    elif compute_device == "CPU":
-        bpy.context.scene.cycles.device = "CPU"
-        bpy.context.scene.render.threads = multiprocessing.cpu_count()
-    else:
-        bpy.context.scene.cycles.device = "GPU"
-        preferences = bpy.context.preferences.addons["cycles"].preferences
-        for device_type in preferences.get_device_types(bpy.context):
-            preferences.get_devices_for_type(device_type[0])
-        for gpu_type in ["OPTIX", "CUDA"]:
-            found = False
-            for device in preferences.devices:
-                print("device", device.name, device.type)
-                if device.type == gpu_type and (
-                    compute_device_type is None or compute_device_type == gpu_type
-                ):
-                    bpy.context.preferences.addons[
-                        "cycles"
-                    ].preferences.compute_device_type = gpu_type
-                    print(
-                        "Device {} of type {} found and used.".format(
-                            device.name, device.type
-                        )
-                    )
-                    found = True
-                    break
-            if found:
-                break
-        # make sure that all visible GPUs are used
-        for device in prefs.devices:
-            device.use = True
-
-    # Set the Experimental features on/off
-    if use_experimental_features:
-        bpy.context.scene.cycles.feature_set = "EXPERIMENTAL"
-
-    # setting the frame end, will be changed by the camera loader modules
-    bpy.context.scene.frame_end = 0
-
-    # Sets background color
-    RendererUtility.set_world_background(horizon_color)
-    world = bpy.data.worlds["World"]
-    world["category_id"] = 0
-
-    # Create the camera
-    cam = bpy.data.cameras.new("Camera")
-    cam_ob = bpy.data.objects.new("Camera", cam)
-    bpy.context.scene.collection.objects.link(cam_ob)
-    bpy.context.scene.camera = cam_ob
-
-    Initializer.set_default_parameters()
+    # Set default parameters
+    _Initializer.set_default_parameters()
 
     random_seed = os.getenv("BLENDER_PROC_RANDOM_SEED")
     if random_seed:
-        print("Got random seed: {}".format(random_seed))
+        print(f"Got random seed: {random_seed}")
         try:
             random_seed = int(random_seed)
         except ValueError as e:
@@ -143,47 +54,63 @@ def init(
         random.seed(random_seed)
         np_random.seed(random_seed)
 
+    # Remember init was completed
+    GlobalStorage.add("bproc_init_complete", True)
 
-def cleanup():
-    """Resets the scene to its clean state, but keeping the UI as it is"""
+
+def clean_up(clean_up_camera: bool = False):
+    """ Resets the scene to its clean state.
+
+    This method removes all objects, camera poses and cleans up the world background.
+    All (renderer) settings and the UI are kept as they are.
+
+    :param clean_up_camera: If True, also the camera is set back to its clean state.
+    """
     # Switch to right context
     if bpy.context.object is not None and bpy.context.object.mode != "OBJECT":
-        bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.ops.object.mode_set(mode='OBJECT')
 
     # Clean up
-    Initializer._remove_all_data()
-    Initializer._remove_custom_properties()
+    _Initializer.remove_all_data(clean_up_camera)
+    _Initializer.remove_custom_properties()
 
     # Create new world
     new_world = bpy.data.worlds.new("World")
     bpy.context.scene.world = new_world
+    new_world["category_id"] = 0
+
+    if clean_up_camera:
+        # Create the camera
+        cam = bpy.data.cameras.new("Camera")
+        cam_ob = bpy.data.objects.new("Camera", cam)
+        bpy.context.scene.collection.objects.link(cam_ob)
+        bpy.context.scene.camera = cam_ob
+
+    # Make sure keyframes are cleaned up
+    reset_keyframes()
 
 
-class Initializer:
+class _Initializer:
+    """
+    This is the initializer class used to init a BlenderProc scene.
+    """
+
     @staticmethod
     def set_default_parameters():
-        """Loads and sets default parameters defined in DefaultConfig.py"""
+        """ Loads and sets default parameters defined in DefaultConfig.py """
         # Set default intrinsics
-        CameraUtility.set_intrinsics_from_blender_params(
-            DefaultConfig.fov,
-            DefaultConfig.resolution_x,
-            DefaultConfig.resolution_y,
-            DefaultConfig.clip_start,
-            DefaultConfig.clip_end,
-            DefaultConfig.pixel_aspect_x,
-            DefaultConfig.pixel_aspect_y,
-            DefaultConfig.shift_x,
-            DefaultConfig.shift_y,
-            DefaultConfig.lens_unit,
-        )
-        CameraUtility.set_stereo_parameters(
-            DefaultConfig.stereo_convergence_mode,
-            DefaultConfig.stereo_convergence_distance,
-            DefaultConfig.stereo_interocular_distance,
-        )
+        CameraUtility.set_intrinsics_from_blender_params(DefaultConfig.fov, DefaultConfig.resolution_x,
+                                                         DefaultConfig.resolution_y, DefaultConfig.clip_start,
+                                                         DefaultConfig.clip_end, DefaultConfig.pixel_aspect_x,
+                                                         DefaultConfig.pixel_aspect_y, DefaultConfig.shift_x,
+                                                         DefaultConfig.shift_y, DefaultConfig.lens_unit)
+        CameraUtility.set_stereo_parameters(DefaultConfig.stereo_convergence_mode,
+                                            DefaultConfig.stereo_convergence_distance,
+                                            DefaultConfig.stereo_interocular_distance)
 
         # Init renderer
-        RendererUtility._render_init()
+        RendererUtility.render_init()
+        RendererUtility.set_world_background(DefaultConfig.world_background)
         RendererUtility.set_max_amount_of_samples(DefaultConfig.samples)
         RendererUtility.set_noise_threshold(DefaultConfig.sampling_noise_threshold)
 
@@ -192,47 +119,46 @@ class Initializer:
         RendererUtility.set_cpu_threads(0)
         RendererUtility.set_denoiser(DefaultConfig.denoiser)
 
-        RendererUtility.set_simplify_subdivision_render(
-            DefaultConfig.simplify_subdivision_render
-        )
+        RendererUtility.set_simplify_subdivision_render(DefaultConfig.simplify_subdivision_render)
 
-        RendererUtility.set_light_bounces(
-            DefaultConfig.diffuse_bounces,
-            DefaultConfig.glossy_bounces,
-            DefaultConfig.ao_bounces_render,
-            DefaultConfig.max_bounces,
-            DefaultConfig.transmission_bounces,
-            DefaultConfig.transparency_bounces,
-            DefaultConfig.volume_bounces,
-        )
+        RendererUtility.set_light_bounces(DefaultConfig.diffuse_bounces,
+                                          DefaultConfig.glossy_bounces,
+                                          DefaultConfig.ao_bounces_render,
+                                          DefaultConfig.max_bounces,
+                                          DefaultConfig.transmission_bounces,
+                                          DefaultConfig.transparency_bounces,
+                                          DefaultConfig.volume_bounces)
 
-        RendererUtility.set_output_format(
-            DefaultConfig.file_format,
-            DefaultConfig.color_depth,
-            DefaultConfig.enable_transparency,
-            DefaultConfig.jpg_quality,
-        )
+        RendererUtility.set_output_format(DefaultConfig.file_format,
+                                          DefaultConfig.color_depth,
+                                          DefaultConfig.enable_transparency,
+                                          DefaultConfig.jpg_quality)
 
     @staticmethod
-    def _remove_all_data():
-        """Remove all data blocks except opened scripts and the default scene."""
+    def remove_all_data(remove_camera: bool = True):
+        """ Remove all data blocks except opened scripts, the default scene and the camera.
+
+        :param remove_camera: If True, also the default camera is removed.
+        """
         # Go through all attributes of bpy.data
         for collection in dir(bpy.data):
             data_structure = getattr(bpy.data, collection)
             # Check that it is a data collection
-            if (
-                isinstance(data_structure, bpy.types.bpy_prop_collection)
-                and hasattr(data_structure, "remove")
-                and collection not in ["texts"]
-            ):
+            if isinstance(data_structure, bpy.types.bpy_prop_collection) and hasattr(data_structure, "remove") \
+                    and collection not in ["texts"]:
                 # Go over all entities in that collection
                 for block in data_structure:
-                    # Remove everything besides the default scene
-                    if not isinstance(block, bpy.types.Scene) or block.name != "Scene":
-                        data_structure.remove(block)
+                    # Skip the default scene
+                    if isinstance(block, bpy.types.Scene) and block.name == "Scene":
+                        continue
+                    # If desired, skip camera
+                    if not remove_camera and isinstance(block, (bpy.types.Object, bpy.types.Camera)) \
+                            and block.name == "Camera":
+                        continue
+                    data_structure.remove(block)
 
     @staticmethod
-    def _remove_custom_properties():
-        """Remove all custom properties registered at global entities like the scene."""
+    def remove_custom_properties():
+        """ Remove all custom properties registered at global entities like the scene. """
         for key in bpy.context.scene.keys():
             del bpy.context.scene[key]

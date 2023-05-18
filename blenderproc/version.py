@@ -1,1 +1,2 @@
-__version__ = '2.3.0'
+""" Define the current BlenderProc version. """
+__version__ = '2.5.0'

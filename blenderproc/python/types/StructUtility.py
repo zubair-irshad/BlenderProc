@@ -1,12 +1,21 @@
-from typing import Any, List, Tuple
-import numpy as np
+""" The base class of all things in BlenderProc. """
 
-import bpy
-from blenderproc.python.utility.Utility import Utility, KeyFrame
-from mathutils import Vector, Euler, Color, Matrix, Quaternion
+from typing import Any, Dict
 import weakref
 
+import bpy
+import numpy as np
+from mathutils import Vector, Euler, Color, Matrix, Quaternion
+
+from blenderproc.python.utility.Utility import Utility, KeyFrame
+
+
 class Struct:
+    """
+    The base class of all things in BlenderProc, this can be an Entity in the scene or a Material which is only applied
+    to a MeshObject.
+    """
+
     # Contains weak refs to all struct instances
     # As it only uses weak references, instances can still be removed by GC when all other references are gone.
     # If that happens, the instances' weak ref is also automatically removed from the set
@@ -44,7 +53,8 @@ class Struct:
         """ Returns the custom property with the given key.
 
         :param key: The key of the custom property.
-        :param frame: The frame number at which the value should be returned. If None is given, the current frame number is used.
+        :param frame: The frame number which the value should be set to. If None is given, the current
+                      frame number is used.
         :return: The value of the custom property.
         """
         with KeyFrame(frame):
@@ -52,18 +62,23 @@ class Struct:
             if isinstance(value, (Vector, Euler, Color, Matrix, Quaternion)):
                 value = np.array(value)
             return value
-        
+
     def set_cp(self, key: str, value: Any, frame: int = None):
-        """ Sets the custom property with the given key.
+        """ Sets the custom property with the given key. The key can not be the same as any member over the stored
+        blender object.
 
         Keyframes can be only set for custom properties for the types int, float or bool.
 
         :param key: The key of the custom property.
         :param value: The value to set.
-        :param frame: The frame number which the value should be set to. If None is given, the current frame number is used.
+        :param frame: The frame number which the value should be set to. If None is given, the current
+                      frame number is used.
         """
+        if hasattr(self.blender_obj, key):
+            raise ValueError(f"The given key: {key} is already an attribute of the blender object and can not be "
+                             f"used as an custom property, please change the custom property name.")
         self.blender_obj[key] = value
-        if isinstance(self.blender_obj[key], float) or isinstance(self.blender_obj[key], int):
+        if isinstance(self.blender_obj[key], (float, int)):
             Utility.insert_keyframe(self.blender_obj, "[\"" + key + "\"]", frame)
 
     def del_cp(self, key: str):
@@ -81,12 +96,12 @@ class Struct:
         """
         return key in self.blender_obj
 
-    def get_all_cps(self) -> list:
+    def get_all_cps(self) -> Dict[str, Any]:
         """ Returns all custom properties as key, value pairs.
 
-        :return: A list of key value pairs
+        :return: A dictionary of custom properties as key, value pairs
         """
-        return self.blender_obj.items()
+        return dict(self.blender_obj.items())
 
     def clear_all_cps(self):
         """ Removes all existing custom properties the struct has. """
@@ -109,12 +124,10 @@ class Struct:
             if isinstance(value, (Vector, Euler, Color, Matrix, Quaternion)):
                 value = np.array(value)
             return value
-        else:
-            raise Exception("This element does not have an attribute " + str(attr_name))
+        raise ValueError(f"This element does not have an attribute {attr_name}")
 
     def __setattr__(self, key: str, value: Any):
         if key != "blender_obj":
-            raise Exception("The API class does not allow setting any attribute. Use the corresponding method or directly access the blender attribute via entity.blender_obj.attribute_name")
-        else:
-            object.__setattr__(self, key, value)
-
+            raise RuntimeError("The API class does not allow setting any attribute. Use the corresponding method or "
+                               "directly access the blender attribute via entity.blender_obj.attribute_name")
+        object.__setattr__(self, key, value)
