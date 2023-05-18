@@ -864,7 +864,7 @@ def set_render_devices(use_only_cpu: bool = False, desired_gpu_device_type: Unio
             print("device type", device_type)
             # Check if there are devices that support that type
             devices = preferences.get_devices_for_type(device_type)
-            print("devices")
+            print("devices", devices)
             if devices:
                 # Set device type
                 bpy.context.preferences.addons['cycles'].preferences.compute_device_type = device_type
