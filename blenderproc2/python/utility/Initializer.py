@@ -47,6 +47,7 @@ def init(
     bpy.context.scene.render.engine = "CYCLES"
 
     if platform == "darwin":
+        print("in darwinnnnn")
         import platform as platform_locally
 
         mac_version = platform_locally.mac_ver()[0]
@@ -84,6 +85,7 @@ def init(
         bpy.context.scene.cycles.device = "CPU"
         bpy.context.scene.render.threads = multiprocessing.cpu_count()
     else:
+        print("HEREE in platform not darwin")
         bpy.context.scene.cycles.device = "GPU"
         preferences = bpy.context.preferences.addons["cycles"].preferences
         for device_type in preferences.get_device_types(bpy.context):
@@ -91,6 +93,7 @@ def init(
         for gpu_type in ["OPTIX", "CUDA"]:
             found = False
             for device in preferences.devices:
+                print("device", device)
                 if device.type == gpu_type and (
                     compute_device_type is None or compute_device_type == gpu_type
                 ):
