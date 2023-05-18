@@ -145,15 +145,15 @@ def render_poses(poses, temp_dir=RENDER_TEMP_DIR) -> List:
     for cam2world_matrix in poses:
         bproc.camera.add_camera_pose(cam2world_matrix)
 
-    # render
-    bproc.renderer.set_light_bounces(
-        diffuse_bounces=200,
-        glossy_bounces=200,
-        max_bounces=200,
-        transmission_bounces=200,
-        transparent_max_bounces=200,
-    )
-    bproc.camera.set_intrinsics_from_K_matrix(K, IMG_WIDTH, IMG_HEIGHT)
+    # # render
+    # bproc.renderer.set_light_bounces(
+    #     diffuse_bounces=200,
+    #     glossy_bounces=200,
+    #     max_bounces=200,
+    #     transmission_bounces=200,
+    #     transparent_max_bounces=200,
+    # )
+    # bproc.camera.set_intrinsics_from_K_matrix(K, IMG_WIDTH, IMG_HEIGHT)
     data = bproc.renderer.render(output_dir=temp_dir)
     imgs = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in data["colors"]]
 
