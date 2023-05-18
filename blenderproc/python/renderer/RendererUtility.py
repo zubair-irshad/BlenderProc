@@ -852,6 +852,8 @@ def set_render_devices(use_only_cpu: bool = False, desired_gpu_device_type: Unio
         print("Using only the CPU for rendering")
     else:
         print("RENDER UTiLITY HERE")
+
+        print("=============================================\n\n\n")
         # Use GPU
         bpy.context.scene.cycles.device = "GPU"
         preferences = bpy.context.preferences.addons['cycles'].preferences
@@ -862,6 +864,7 @@ def set_render_devices(use_only_cpu: bool = False, desired_gpu_device_type: Unio
             print("device type", device_type)
             # Check if there are devices that support that type
             devices = preferences.get_devices_for_type(device_type)
+            print("devices")
             if devices:
                 # Set device type
                 bpy.context.preferences.addons['cycles'].preferences.compute_device_type = device_type
@@ -882,6 +885,8 @@ def set_render_devices(use_only_cpu: bool = False, desired_gpu_device_type: Unio
                                        f"{list(range(len(devices)))}")
 
                 break
+
+        print("=============================================\n\n\n")
 
         if not found:
             bpy.context.scene.cycles.device = "CPU"
