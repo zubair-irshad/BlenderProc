@@ -139,7 +139,17 @@ def check_valid_poses(scene_idx):
     scene_objects = load_scene_objects(scene_idx, scene_list_all)
     scene_objs_dict = build_and_save_scene_cache(cache_dir, scene_objects)
 
-    all_value = True
+    new_room_bboxes = {}
+    new_room_bboxes[scene_idx] = {}
+    bbox_path = os.path.join(
+        "/home/ubuntu/zubair/BlenderProc/scripts/all_bboxes",
+        "bbox_" + str(scene_idx) + ".yaml",
+    )
+
+    with open(bbox_path, "r") as file:
+        data = yaml.safe_load(file)
+
+    # all_value = True
     for room_idx in room_config[scene_idx].keys():
         print("==============Clearing Keyframaes")
         # Clear all key frames from the previous run
@@ -174,13 +184,16 @@ def check_valid_poses(scene_idx):
         )
 
         value = True if (len(poses) > 80 and len(poses) < 450) else False
-        all_value = all_value and value
 
-    data = {"value": all_value}
+        if value == True:
+            new_room_bboxes[scene_idx][room_idx] = data[scene_idx][room_idx]
+        # all_value = all_value and value
+
+    # data = {"value": all_value}
 
     save_path = os.path.join(
-        "/home/ubuntu/zubair/BlenderProc/scripts/all_is_valid",
-        "is_valid_" + str(scene_idx) + ".yaml",
+        "/home/ubuntu/zubair/BlenderProc/scripts/all_valid_boxes",
+        "bbox_" + str(scene_idx) + ".yaml",
     )
     with open(save_path, "w") as file:
         yaml.dump(data, file)
