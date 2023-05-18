@@ -91,6 +91,7 @@ def init(
         for gpu_type in ["OPTIX", "CUDA"]:
             found = False
             for device in preferences.devices:
+                print("device", device.name, device.type)
                 if device.type == gpu_type and (
                     compute_device_type is None or compute_device_type == gpu_type
                 ):
