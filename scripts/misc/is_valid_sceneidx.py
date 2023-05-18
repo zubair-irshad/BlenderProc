@@ -1,8 +1,8 @@
 import os
 import yaml
 
-start_idx = 2300
-end_idx = 2500
+start_idx = 2000
+end_idx = 2100
 folder_path = "/home/ubuntu/BlenderProc/scripts/all_is_valid"
 
 valid_files = []
