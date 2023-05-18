@@ -60,16 +60,19 @@ if __name__ == "__main__":
     queue = multiprocessing.JoinableQueue()
     count = multiprocessing.Value("i", 0)
 
-    start_scene_idx = 2200
-    end_scene_idx = 2300
-    worker_per_gpu = 1
-    num_gpus = 8  # 6
-    gpu_start = 0  # 2
+    start_scene_idx = 2300
+    end_scene_idx = 2400
+    worker_per_gpu = 10
+    # num_gpus = 8  # 6
+    # gpu_start = 0  # 2
+    num_gpus = 6
+    gpu_start = 0
     workers = num_gpus * worker_per_gpu
     # Start worker processes on each of the GPUs
     for gpu_i in range(num_gpus):
         for worker_i in range(worker_per_gpu):
-            worker_i = gpu_i * worker_per_gpu + worker_i
+            worker_i = (gpu_i - gpu_start) * worker_per_gpu + worker_i
+            # worker_i = gpu_i * worker_per_gpu + worker_i
             process = multiprocessing.Process(target=worker, args=(queue, count, gpu_i))
             process.daemon = True
             process.start()
