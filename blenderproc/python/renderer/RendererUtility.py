@@ -873,7 +873,9 @@ def set_render_devices(use_only_cpu: bool = False, desired_gpu_device_type: Unio
                 for i, device in enumerate(devices):
                     print("device", i, device)
                     # Only use gpus with specified ids
-                    if desired_gpu_ids is None or i in desired_gpu_ids:
+                    if 'CPU' in device.name:
+                        device.use = False
+                    elif desired_gpu_ids is None or i in desired_gpu_ids:
                         print(f"Device {device.name} of type {device.type} found and used.")
                         device.use = True
                         found = True
