@@ -5,7 +5,7 @@ from random import shuffle
 pi = np.pi
 cos = np.cos
 sin = np.sin
-COMPUTE_DEVICE_TYPE = "CUDA"
+# COMPUTE_DEVICE_TYPE = "CUDA"
 
 
 def normalize(x, axis=-1, order=2):

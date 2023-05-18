@@ -40,7 +40,7 @@ from utils import build_and_save_scene_cache
 pi = np.pi
 cos = np.cos
 sin = np.sin
-COMPUTE_DEVICE_TYPE = "OPTIX"
+COMPUTE_DEVICE_TYPE = "CUDA"
 
 
 def main():
