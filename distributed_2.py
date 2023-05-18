@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     # Add items to the queue
 
-    scene_ids = np.arange(start=2200, stop=2300, step=1)
+    scene_ids = np.arange(start=start_scene_idx, stop=end_scene_idx, step=1)
 
     # with open(args.input_models_path, "r") as f:
     #     model_paths = json.load(f)
