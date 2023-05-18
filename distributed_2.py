@@ -62,13 +62,14 @@ if __name__ == "__main__":
 
     start_scene_idx = 2300
     end_scene_idx = 2400
-    worker_per_gpu = 10
+    worker_per_gpu = 5
     # num_gpus = 8  # 6
     # gpu_start = 0  # 2
     # num_gpus = 6
     # gpu_start = 0
 
-    gpus_available = [0, 2, 3, 4, 5, 6]
+    # gpus_available = [0, 2, 3, 4, 5, 6]
+    gpus_available = [0, 1, 2, 3, 4, 5, 6, 7]
     num_gpus = len(gpus_available)
     gpu_start = gpus_available[0]
 
