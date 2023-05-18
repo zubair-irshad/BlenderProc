@@ -13,7 +13,7 @@ for idx in range(start_idx, end_idx + 1):
         with open(file_path, "r") as file:
             data = yaml.safe_load(file)
             print("data", data)
-            if data.get("value") == "true":
+            if data.get("value") == True:
                 valid_files.append(idx)
 
 print(valid_files)
