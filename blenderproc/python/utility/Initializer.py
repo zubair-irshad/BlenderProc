@@ -32,7 +32,7 @@ def init(
     :param clean_up_scene: Set to False, if you want to keep all scene data.
     """
     print("==========================================================\n\n\n")
-    print("HEREEEEEEEEEEEEEEEEEEEEEEE")
+    print("HEREEEEEEEEEEEEEEEEEEEEEEE,,,,,,,,,,,,,,,,,,,,,,,,,,,")
     print("==========================================================\n\n\n")
     if clean_up_scene:
         cleanup()

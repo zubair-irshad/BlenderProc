@@ -63,7 +63,8 @@ def main():
     cache_dir = f"./cached/{args.scene_idx}"
     # load objects
     compute_device = "cuda:" + args.gpu
-    bproc.init(compute_device=compute_device, compute_device_type=COMPUTE_DEVICE_TYPE)
+    # bproc.init(compute_device=compute_device, compute_device_type=COMPUTE_DEVICE_TYPE)
+    bproc.init()
     scene_objects = load_scene_objects(args.scene_idx, scene_list_all)
     scene_objs_dict = build_and_save_scene_cache(cache_dir, scene_objects)
 
