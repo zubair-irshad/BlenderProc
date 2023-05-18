@@ -13,7 +13,7 @@ from blenderproc.python.utility.DefaultConfig import DefaultConfig
 from blenderproc.python.renderer import RendererUtility
 
 
-def init(clean_up_scene: bool = True, gpu_id: int = 0):
+def init(clean_up_scene: bool = True):
     """ Initializes BlenderProc.
 
     Cleans up the whole scene at first and then initializes basic blender settings, the world, the renderer and
@@ -39,7 +39,7 @@ def init(clean_up_scene: bool = True, gpu_id: int = 0):
     bpy.context.scene.render.engine = 'CYCLES'
 
     # Set default render devices
-    RendererUtility.set_render_devices(desired_gpu_ids = gpu_id)
+    RendererUtility.set_render_devices()
 
     # Set default parameters
     _Initializer.set_default_parameters()

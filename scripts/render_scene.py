@@ -63,7 +63,7 @@ def main():
     # load objects
     compute_device = "cuda:" + args.gpu
     # bproc.init(compute_device=compute_device, compute_device_type=COMPUTE_DEVICE_TYPE)
-    bproc.init(gpu_id = 2)
+    bproc.init()
 
     # render
     bproc.renderer.set_light_bounces(
