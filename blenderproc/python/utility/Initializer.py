@@ -60,6 +60,8 @@ def init(
                 preferences.get_devices_for_type(device_type[0])
             gpu_type = "METAL"  # only available type on mac os
             for device in preferences.devices:
+                print("platform", platform)
+                print("device", device.name, device.type)
                 if device.type == gpu_type and (
                     compute_device_type is None or compute_device_type == gpu_type
                 ):
