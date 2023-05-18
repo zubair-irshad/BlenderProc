@@ -14,4 +14,4 @@ for root, dirs, files in os.walk(directory):
                 main_folder_path = os.path.dirname(images_dir)
                 main_folder = os.path.basename(main_folder_path)
                 print(f"Deleting {main_folder_path}")
-                # os.rmdir(main_folder_path)
+                os.rmdir(main_folder_path)
