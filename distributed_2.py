@@ -65,15 +65,22 @@ if __name__ == "__main__":
     worker_per_gpu = 10
     # num_gpus = 8  # 6
     # gpu_start = 0  # 2
-    num_gpus = 6
-    gpu_start = 0
+    # num_gpus = 6
+    # gpu_start = 0
+
+    gpus_available = [0, 2, 3, 4, 5, 6]
+    num_gpus = len(gpus_available)
+    gpu_start = gpus_available[0]
+
     workers = num_gpus * worker_per_gpu
     # Start worker processes on each of the GPUs
     for gpu_i in range(num_gpus):
+        gpu_id = gpus_available[gpu_i]
         for worker_i in range(worker_per_gpu):
             worker_i = (gpu_i - gpu_start) * worker_per_gpu + worker_i
+            # worker_id = (gpu_i - gpu_start) * worker_per_gpu + worker_i
             # worker_i = gpu_i * worker_per_gpu + worker_i
-            process = multiprocessing.Process(target=worker, args=(queue, count, gpu_i))
+            process = multiprocessing.Process(target=worker, args=(queue, count, gpu_id))
             process.daemon = True
             process.start()
 
