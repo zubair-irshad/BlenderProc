@@ -87,7 +87,12 @@ def main():
         dst_dir = join(
             args.render_root, "3dfront_{:04d}_{:02}".format(args.scene_idx, room_idx)
         )
-        if os.path.exists(dst_dir):
+        generated_dir = "/wild6d_data/zubair/FRONT3D_render/2xxx"
+
+        data_generated_dir = join(
+            generated_dir, "3dfront_{:04d}_{:02}".format(args.scene_idx, room_idx)
+        )
+        if os.path.exists(data_generated_dir):
             print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n\n")
             print(
                 "We have already generted data for this scene and room",
