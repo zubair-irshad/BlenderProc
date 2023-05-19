@@ -88,15 +88,13 @@ def main():
             args.render_root, "3dfront_{:04d}_{:02}".format(args.scene_idx, room_idx)
         )
         if os.path.exists(dst_dir):
-            print(
-                "==============================================================\n\n\n"
-            )
+            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n\n")
             print(
                 "We have already generted data for this scene and room",
                 args.scene_idx,
                 room_idx,
             )
-            print("===============================================================\n")
+            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n")
             continue
         else:
             os.makedirs(dst_dir, exist_ok=True)
@@ -110,13 +108,20 @@ def main():
         room_objs_dict = get_room_objs_dict(room_bbox, scene_objs_dict)
         room_objs_dict = filter_objs_in_dict(room_objs_dict)
 
-        try:
-            assert (
-                len(room_objs_dict["objects"]) > 0
-            ), "no objects in the room, moving to next ..."
-        except AssertionError as msg:
-            print(msg)
-            sys.exit(1)  # exit the script with a non-zero status code
+        if len(room_objs_dict["objects"]) == 0:
+            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n\n")
+            print("no objects in the room, moving to next ...")
+            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n\n")
+            continue
+
+        # if len(room_objs_dict["objects"])
+        # try:
+        #     assert (
+        #         len(room_objs_dict["objects"]) > 0
+        #     ), "no objects in the room, moving to next ..."
+        # except AssertionError as msg:
+        #     print(msg)
+        #     sys.exit(1)  # exit the script with a non-zero status code
 
         poses, num_closeup, num_global = generate_room_poses(
             args.scene_idx,
@@ -128,6 +133,15 @@ def main():
             global_density=args.global_density,
             room_config=room_config,
         )
+
+        if len(poses) > 450:
+            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n\n")
+            print(
+                "Poses are a lot, we are not going to continue with this .... Poses: ",
+                len(poses),
+            )
+            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n\n")
+            continue
         if not args.no_check:
             print("Render for scene {}, room {}:".format(args.scene_idx, room_idx))
             for obj_dict in room_objs_dict["objects"]:
