@@ -31,7 +31,7 @@ for i in range(start, end):
         with open(filename, "r") as file:
             data = yaml.safe_load(file)
             # Count the number of subentries in the YAML file
-            subentry_count += len(data.keys())
+            subentry_count += len(data[i].keys())
     except FileNotFoundError:
         continue
 
