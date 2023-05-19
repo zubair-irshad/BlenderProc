@@ -31,7 +31,7 @@ for folder in os.listdir(root_folder):
         # If the 'train' subfolder doesn't exist, delete the directory
         print(f"Deleting: {dir_path}")
         # uncomment the next line to actually delete the directory
-        # shutil.rmtree(dir_path)
+        shutil.rmtree(dir_path)
         delete_count += 1
 
 print(f"Deleted {delete_count} directories.")
