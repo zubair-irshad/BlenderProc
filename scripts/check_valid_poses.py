@@ -164,13 +164,19 @@ def check_valid_poses(scene_idx):
         room_objs_dict = get_room_objs_dict(room_bbox, scene_objs_dict)
         room_objs_dict = filter_objs_in_dict(room_objs_dict)
 
-        try:
-            assert (
-                len(room_objs_dict["objects"]) > 0
-            ), "no objects in the room, moving to next ..."
-        except AssertionError as msg:
-            print(msg)
-            sys.exit(1)  # exit the script with a non-zero status code
+        # try:
+        #     assert (
+        #         len(room_objs_dict["objects"]) > 0
+        #     ), "no objects in the room, moving to next ..."
+        # except AssertionError as msg:
+        #     print(msg)
+        #     sys.exit(1)  # exit the script with a non-zero status code
+
+        if len(room_objs_dict["objects"]) == 0:
+            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n\n")
+            print("no objects in the room, moving to next ...")
+            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n\n\n")
+            continue
 
         poses, num_closeup, num_global = generate_room_poses(
             scene_idx,
@@ -196,7 +202,7 @@ def check_valid_poses(scene_idx):
         "bbox_" + str(scene_idx) + ".yaml",
     )
     with open(save_path, "w") as file:
-        yaml.dump(data, file)
+        yaml.dump(new_room_bboxes, file)
 
 
 def main():
