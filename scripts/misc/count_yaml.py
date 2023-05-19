@@ -10,7 +10,7 @@ directory_path_valid = "/home/ubuntu/zubair/BlenderProc/scripts/all_valid_boxes"
 start = 2100
 end = 2200
 
-idxs = [2300, 2400, 2500]
+idxs = [2300, 2400, 2500, 2600, 2700]
 
 for i in range(len(idxs) - 1):
     start = idxs[i]
