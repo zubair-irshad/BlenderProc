@@ -30,6 +30,7 @@ from os.path import join
 import argparse
 
 import sys
+
 sys.path.append("./scripts")
 from render_utils.pose_utils import *
 from render_utils.front3d_utils import *
@@ -45,7 +46,7 @@ COMPUTE_DEVICE_TYPE = "CUDA"
 def main():
     args = parse_args()
 
-    room_config_folder = "./scripts/all_bboxes"
+    room_config_folder = "./scripts/all_valid_boxes"
     room_config_path = os.path.join(
         room_config_folder, "bbox_" + str(args.scene_idx) + ".yaml"
     )
