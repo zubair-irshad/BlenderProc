@@ -24,7 +24,7 @@ root_folder = "/wild6d_data/zubair/FRONT3D_render/"
 delete_count = 0
 
 # Recursively iterate through the subdirectories
-for folder in os.lisdir(root_folder):
+for folder in os.listdir(root_folder):
     dir_path = os.path.join(root_folder, folder)
     train_folder = os.path.join(dir_path, "train")
     if not os.path.isdir(train_folder):
