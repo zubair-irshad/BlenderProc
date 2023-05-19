@@ -15,7 +15,7 @@ for root, dirs, files in os.walk(directory):
                 main_folder_path = os.path.dirname(os.path.dirname(images_dir))
                 # main_folder = os.path.basename(main_folder_path)
                 print(f"Deleting {main_folder_path}")
-                # shutil.rmtree(main_folder_path)
+                shutil.rmtree(main_folder_path)
 
 # import shutil
 # import os
