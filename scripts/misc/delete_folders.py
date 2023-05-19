@@ -24,15 +24,14 @@ root_folder = "/wild6d_data/zubair/FRONT3D_render/"
 delete_count = 0
 
 # Recursively iterate through the subdirectories
-for root, dirs, files in os.walk(root_folder):
-    for directory in dirs[:]:
-        dir_path = os.path.join(root, directory)
-        train_folder = os.path.join(dir_path, "train")
-        if not os.path.isdir(train_folder):
-            # If the 'train' subfolder doesn't exist, delete the directory
-            print(f"Deleting: {dir_path}")
-            # uncomment the next line to actually delete the directory
-            # shutil.rmtree(dir_path)
-            delete_count += 1
+for folder in os.lisdir(root_folder):
+    dir_path = os.path.join(root_folder, folder)
+    train_folder = os.path.join(dir_path, "train")
+    if not os.path.isdir(train_folder):
+        # If the 'train' subfolder doesn't exist, delete the directory
+        print(f"Deleting: {dir_path}")
+        # uncomment the next line to actually delete the directory
+        # shutil.rmtree(dir_path)
+        delete_count += 1
 
 print(f"Deleted {delete_count} directories.")
