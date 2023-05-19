@@ -3,7 +3,7 @@ import yaml
 
 start_idx = 2600
 end_idx = 2800
-folder_path = "/home/ubuntu/BlenderProc/scripts/all_is_valid"
+folder_path = "/home/ubuntu/zubair/BlenderProc/scripts/all_is_valid"
 
 valid_files = []
 
@@ -13,7 +13,7 @@ for idx in range(start_idx, end_idx + 1):
         with open(file_path, "r") as file:
             data = yaml.safe_load(file)
             print("data", data)
-            if data.get("value") == True:
+            if data["value"] == True:
                 valid_files.append(idx)
 
 print(valid_files)
