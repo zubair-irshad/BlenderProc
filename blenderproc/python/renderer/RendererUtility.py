@@ -971,8 +971,8 @@ def set_render_devices(
             # Define default for linux and windows
             # desired_gpu_device_type = ["OPTIX", "CUDA", "HIP"]
 
-            # desired_gpu_device_type = ["OPTIX"]
-            desired_gpu_device_type = ["CUDA"]
+            desired_gpu_device_type = ["OPTIX"]
+            # desired_gpu_device_type = ["CUDA"]
     elif not isinstance(desired_gpu_device_type, list):
         # Make sure it's a list
         desired_gpu_device_type = [desired_gpu_device_type]
