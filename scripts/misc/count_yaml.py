@@ -3,12 +3,12 @@ import os
 
 subentry_count = 0
 
-directory_path = "/home/mirshad7/BlenderProc/scripts/all_bboxes"
+directory_path = "/home/ubuntu/zubair/BlenderProc/scripts/all_bboxes"
 
-directory_path_valid = "/home/mirshad7/BlenderProc/scripts/all_valid_boxes"
+directory_path_valid = "/home/ubuntu/zubair/BlenderProc/scripts/all_valid_boxes"
 
-start = 2300
-end = 2400
+start = 2100
+end = 2200
 # Loop through each YAML file from 2100 to 2200
 for i in range(start, end):
     filename = os.path.join(directory_path, f"bbox_{i}.yaml")
