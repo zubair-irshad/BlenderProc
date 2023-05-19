@@ -3,7 +3,7 @@ import os
 
 subentry_count = 0
 
-directory_path = "/home/ubuntu/zubair/BlenderProc/scripts/all_valid_bboxes"
+directory_path = "/home/ubuntu/zubair/BlenderProc/scripts/all_bboxes"
 
 directory_path_valid = "/home/ubuntu/zubair/BlenderProc/scripts/all_valid_boxes"
 
