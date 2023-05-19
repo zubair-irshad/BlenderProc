@@ -87,7 +87,19 @@ def main():
         dst_dir = join(
             args.render_root, "3dfront_{:04d}_{:02}".format(args.scene_idx, room_idx)
         )
-        os.makedirs(dst_dir, exist_ok=True)
+        if os.path.exists(dst_dir):
+            print(
+                "==============================================================\n\n\n"
+            )
+            print(
+                "We have already generted data for this scene and room",
+                args.scene_idx,
+                room_idx,
+            )
+            print("===============================================================\n")
+            continue
+        else:
+            os.makedirs(dst_dir, exist_ok=True)
 
         room_bbox = get_room_bbox(
             args.scene_idx,
