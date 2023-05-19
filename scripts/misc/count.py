@@ -29,7 +29,7 @@ for folder in os.listdir(folder_path):
 
 
 print("images greater than 80", count)
-print("images greater than 80", countg600)
+print("images greater than 60", countg600)
 
 
 # import os
