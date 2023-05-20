@@ -60,16 +60,16 @@ if __name__ == "__main__":
     queue = multiprocessing.JoinableQueue()
     count = multiprocessing.Value("i", 0)
 
-    start_scene_idx = 2700
-    end_scene_idx = 3000
+    start_scene_idx = 2000
+    end_scene_idx = 21000
     worker_per_gpu = 10
     # num_gpus = 8  # 6
     # gpu_start = 0  # 2
     # num_gpus = 6
     # gpu_start = 0
 
-    # gpus_available = [0, 2, 3, 4, 5, 6]
-    gpus_available = [0, 1, 2, 3, 4, 5, 6, 7]
+    gpus_available = [0, 2, 3, 4, 5, 6, 7]
+    # gpus_available = [0, 1, 2, 3, 4, 5, 6, 7]
     # gpus_available = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     num_gpus = len(gpus_available)
     gpu_start = gpus_available[0]
