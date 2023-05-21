@@ -61,7 +61,7 @@ if __name__ == "__main__":
     count = multiprocessing.Value("i", 0)
 
     start_scene_idx = 2000
-    end_scene_idx = 21000
+    end_scene_idx = 2100
     worker_per_gpu = 10
     # num_gpus = 8  # 6
     # gpu_start = 0  # 2
