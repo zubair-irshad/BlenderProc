@@ -23,7 +23,7 @@ for folder in os.listdir(folder_path):
             if file_count > 60 and file_count < 450:
                 count += 1
                 all_file_count += file_count
-            if file_count > 600:
+            if file_count > 450:
                 print("folder, file_count", folder, file_count)
                 countg600 += 1
 
@@ -33,7 +33,7 @@ for folder in os.listdir(folder_path):
 
 
 print("===============================================\n\n")
-print("images greater than 80 and less than 600", count)
+print("images greater than 60 and less than 600", count)
 print("all file count", all_file_count)
 print("images greater than 600", countg600)
 print("images less than 80", countl80)
