@@ -5,6 +5,8 @@ folder_path = "/wild6d_data/zubair/FRONT3D_render"
 
 count = 0
 countg600 = 0
+countl80 = 0
+all_file_count = 0
 
 for folder in os.listdir(folder_path):
     folder_full_path = os.path.join(folder_path, folder)
@@ -18,18 +20,24 @@ for folder in os.listdir(folder_path):
                     if (file.endswith(".jpg") or (file.endswith(".png")))
                 ]
             )
-            if file_count > 80 and file_count < 600:
+            if file_count > 80 and file_count < 450:
                 count += 1
+                all_file_count += file_count
             if file_count > 600:
                 print("folder, file_count", folder, file_count)
                 countg600 += 1
 
             elif file_count < 80:
+                countl80 += 1
                 print("folder", folder)
 
 
-print("images greater than 80", count)
-print("images greater than 60", countg600)
+print("===============================================\n\n")
+print("images greater than 80 and less than 600", count)
+print("all file count", all_file_count)
+print("images greater than 600", countg600)
+print("images less than 80", countl80)
+print("===============================================\n\n")
 
 
 # import os
