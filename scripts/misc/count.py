@@ -29,7 +29,7 @@ for folder in os.listdir(folder_path):
 
             elif file_count < 80:
                 countl80 += 1
-                print("folder", folder)
+                print("folder, file_count", folder, file_count)
 
 
 print("===============================================\n\n")
