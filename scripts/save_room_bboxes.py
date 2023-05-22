@@ -75,7 +75,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def save_bbox_and_scene_cache(idx):
+def save_bbox(idx):
     # for idx in range(30):
     # scene_idx = 13
 
@@ -83,7 +83,7 @@ def save_bbox_and_scene_cache(idx):
     # loaded_objects = load_scene_objects_wotexture(idx, scene_list_all)
 
     loaded_objects = load_scene_objects(idx, scene_list_all)
-    scene_objs_dict = build_and_save_scene_cache(cache_dir, loaded_objects)
+    # scene_objs_dict = build_and_save_scene_cache(cache_dir, loaded_objects)
 
     point_sampler = Front3DPointInRoomSampler(loaded_objects)
     floors = point_sampler.used_floors
@@ -100,7 +100,7 @@ def save_bbox_and_scene_cache(idx):
                 "bbox": [min_corner[:2].tolist(), max_corner[:2].tolist()]
             }
         save_path = os.path.join(
-            "/home/ubuntu/zubair/BlenderProc/scripts/all_bboxes_w_cache",
+            "/home/ubuntu/zubair/BlenderProc/scripts/all_bboxes",
             "bbox_" + str(idx) + ".yaml",
         )
         with open(save_path, "w") as file:
@@ -109,7 +109,7 @@ def save_bbox_and_scene_cache(idx):
 
 def main():
     args = parse_args()
-    save_bbox_and_scene_cache(args.scene_idx)
+    save_bbox(args.scene_idx)
 
 
 if __name__ == "__main__":
