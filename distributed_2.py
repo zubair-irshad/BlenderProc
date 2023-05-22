@@ -60,8 +60,8 @@ if __name__ == "__main__":
     queue = multiprocessing.JoinableQueue()
     count = multiprocessing.Value("i", 0)
 
-    start_scene_idx = 2500
-    end_scene_idx = 2600
+    start_scene_idx = 2100
+    end_scene_idx = 2200
     worker_per_gpu = 5
     # num_gpus = 8  # 6
     # gpu_start = 0  # 2
