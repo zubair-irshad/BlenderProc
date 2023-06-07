@@ -24,6 +24,7 @@ for scene_name in scenes:
 
     if res[0] <30 or res[1] <30 or res[2] <30:
         print("scene_name", scene_name)
+        print("res", res)
         filtered_scenes_count += 1
         filtered_scenes.append(scene_name)
 
