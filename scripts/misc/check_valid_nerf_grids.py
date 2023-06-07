@@ -24,7 +24,10 @@ for scene_name in scenes:
     # print("res", res)
     # print("rgbsigma original", rgbsigma.shape)
 
-    if res[0] <min_dim or res[1] <min_dim or res[2] <min_dim:
+
+    if sum(dim < 50 for dim in res) == 2:
+    #     print(arr)
+    # if res[0] <min_dim or res[1] <min_dim or res[2] <min_dim:
         print("scene_name", scene_name)
         print("res", res)
         filtered_scenes_count += 1
