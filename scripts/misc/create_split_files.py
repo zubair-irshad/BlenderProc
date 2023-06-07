@@ -14,7 +14,9 @@ for file_name in os.listdir(features_dir):
     if file_name.endswith('.npz'):
         scene_name = os.path.splitext(file_name)[0]
         scenes.append(scene_name)
+
+modified_split = dict(split)
 # Replace train_scenes in the split file with the list of scenes
-split['train_scenes'] = np.array(scenes)
+modified_split['train_scenes'] = np.array(scenes)
 # Save the modified split file
-np.savez(out_file, **split)
+np.savez(out_file, **modified_split)
