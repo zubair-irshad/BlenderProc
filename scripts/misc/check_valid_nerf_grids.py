@@ -11,12 +11,24 @@ npz_files = [
 
 scenes = [f.split(".")[0] for f in npz_files]
 
+filtered_scenes = []
+filtered_scenes_count = 0
 for scene_name in scenes:
     feature = np.load(os.path.join(feature_dir, scene_name + ".npz"), allow_pickle=True)
 
     res = feature["resolution"]
-    rgbsigma = feature["rgbsigma"]
+    # rgbsigma = feature["rgbsigma"]
 
-    print("res", res)
-    print("rgbsigma original", rgbsigma.shape)
+    # print("res", res)
+    # print("rgbsigma original", rgbsigma.shape)
 
+    if res[0] <30 or res[1] <30 or res[2] <30:
+        print("scene_name", scene_name)
+        filtered_scenes_count += 1
+        filtered_scenes.append(scene_name)
+
+print("Invalid number of grids", filtered_scenes_count)
+
+# Save the filtered scene names to a text file
+with open("filtered_scenes.txt", "w") as file:
+    file.write("\n".join(filtered_scenes))
