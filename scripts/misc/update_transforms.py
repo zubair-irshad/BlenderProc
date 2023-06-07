@@ -1,11 +1,13 @@
 import os
 import json
+import numpy as np
 
-folder_path = "/wild6d_data/zubair/FRONT3D_render"
+folder_path = "/home/zubairirshad/Downloads/FRONT3D_render"
 
 for folder in os.listdir(folder_path):
     folder_full_path = os.path.join(folder_path, folder)
     if os.path.isdir(folder_full_path):
+        print("folder", folder_full_path)
         image_path = os.path.join(folder_full_path, "train/images")
         if os.path.isdir(image_path):
             # Check if first image has file format 0000.jpg or rgb_0000.png
