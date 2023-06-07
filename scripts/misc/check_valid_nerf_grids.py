@@ -22,7 +22,7 @@ for scene_name in scenes:
     # print("res", res)
     # print("rgbsigma original", rgbsigma.shape)
 
-    if res[0] <30 or res[1] <30 or res[2] <30:
+    if res[0] <40 or res[1] <40 or res[2] <40:
         print("scene_name", scene_name)
         print("res", res)
         filtered_scenes_count += 1
