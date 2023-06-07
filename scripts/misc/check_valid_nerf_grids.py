@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-feature_dir = '/wild6d/data/zubair/FRONT3D_MAE'
+feature_dir = '/wild6d_data/zubair/FRONT3D_MAE'
 npz_files = os.listdir(feature_dir)
 npz_files = [
     f
