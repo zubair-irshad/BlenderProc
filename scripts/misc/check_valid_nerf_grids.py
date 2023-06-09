@@ -1,6 +1,8 @@
 import os
 import numpy as np
 
+
+min_dim = 50
 feature_dir = '/wild6d_data/zubair/FRONT3D_MAE'
 npz_files = os.listdir(feature_dir)
 npz_files = [
@@ -22,8 +24,12 @@ for scene_name in scenes:
     # print("res", res)
     # print("rgbsigma original", rgbsigma.shape)
 
-    if res[0] <30 or res[1] <30 or res[2] <30:
+
+    if sum(dim < 50 for dim in res) == 2:
+    #     print(arr)
+    # if res[0] <min_dim or res[1] <min_dim or res[2] <min_dim:
         print("scene_name", scene_name)
+        print("res", res)
         filtered_scenes_count += 1
         filtered_scenes.append(scene_name)
 
