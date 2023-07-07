@@ -1,7 +1,7 @@
 import os
 import shutil
 
-directory = "/wild6d_data/zubair/FRONT3D_render"
+directory = "/arkit_data/zubair/FRONT3D_render_3k"
 
 # Find all subfolders within the directory
 for root, dirs, files in os.walk(directory):
