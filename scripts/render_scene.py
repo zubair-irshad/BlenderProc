@@ -232,7 +232,7 @@ def parse_args():
     parser.add_argument(
         "--render_root",
         type=str,
-        default="/wild6d_data/zubair/FRONT3D_render",
+        default="/arkit_data/zubair/FRONT3D_render_3k",
         help="Output directory. If not specified, use the default directory.",
     )
 

@@ -79,8 +79,8 @@ def main():
     # for proc in procs:
     #     proc.wait()
 
-    start_scene_idx = 2200
-    end_scene_idx = 2300
+    start_scene_idx = 3000
+    end_scene_idx = 3300
     path = "./scripts/all_bboxes"
     all_frames = []
     for i in range(start_scene_idx, end_scene_idx):
@@ -90,8 +90,8 @@ def main():
 
     print("all_frames", all_frames)
     worker_per_gpu = 1
-    num_gpus = 16  # 6
-    gpu_start = 0  # 2
+    num_gpus = 6  # 6
+    gpu_start = 2  # 2
     workers = num_gpus * worker_per_gpu
     # all_frames = range(start_scene_idx, end_scene_idx)
     # print("workers", workers)
