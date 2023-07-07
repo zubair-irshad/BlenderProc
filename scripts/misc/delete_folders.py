@@ -10,7 +10,7 @@ for root, dirs, files in os.walk(directory):
             images_dir = os.path.join(root, dir_name)
             files_count = len(os.listdir(images_dir))
             print(f"Files count in {images_dir}: {files_count}")
-            if files_count < 60:
+            if files_count < 100:
                 # Delete the main subfolder
                 main_folder_path = os.path.dirname(os.path.dirname(images_dir))
                 # main_folder = os.path.basename(main_folder_path)
