@@ -87,7 +87,7 @@ def main():
         dst_dir = join(
             args.render_root, "3dfront_{:04d}_{:02}".format(args.scene_idx, room_idx)
         )
-        generated_dir = "/arkit_data/zubair/FRONT3D_render_3k/2xxx"
+        generated_dir = "/arkit_data/zubair/FRONT3D_render_3k/3xxx"
 
         data_generated_dir = join(
             generated_dir, "3dfront_{:04d}_{:02}".format(args.scene_idx, room_idx)
