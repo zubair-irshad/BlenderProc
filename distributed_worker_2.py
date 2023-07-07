@@ -19,7 +19,11 @@ def worker(
         if item is None:
             break
 
-        path_pattern = "/wild6d_data/zubair/FRONT3D_render/3dfront_" + str(item) + "_*"
+        # path_pattern = "/wild6d_data/zubair/FRONT3D_render/3dfront_" + str(item) + "_*"
+
+        path_pattern = (
+            "/arkit_data/zubair/FRONT3D_render_3k/3dfront_" + str(item) + "_*"
+        )
 
         if len(glob.glob(path_pattern)) > 0:
             queue.task_done()
@@ -60,9 +64,9 @@ if __name__ == "__main__":
     queue = multiprocessing.JoinableQueue()
     count = multiprocessing.Value("i", 0)
 
-    start_scene_idx = 2200
-    end_scene_idx = 2300
-    worker_per_gpu = 3
+    start_scene_idx = 3000
+    end_scene_idx = 3300
+    worker_per_gpu = 5
     # num_gpus = 8  # 6
     # gpu_start = 0  # 2
     # num_gpus = 6
@@ -70,7 +74,8 @@ if __name__ == "__main__":
 
     # gpus_available = [0, 2, 3, 4, 5, 6, 7]
     # gpus_available = [0, 1, 2, 3, 4, 5, 6, 7]
-    gpus_available = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    # gpus_available = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    gpus_available = [2, 3, 4, 5, 6, 7]
     num_gpus = len(gpus_available)
     gpu_start = gpus_available[0]
 
