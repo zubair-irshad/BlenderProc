@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     start_scene_idx = 3000
     end_scene_idx = 3300
-    worker_per_gpu = 12
+    worker_per_gpu = 15
     # num_gpus = 8  # 6
     # gpu_start = 0  # 2
     # num_gpus = 6
