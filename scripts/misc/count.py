@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-folder_path = "/wild6d_data/zubair/FRONT3D_render"
+folder_path = "/arkit_data/zubair/FRONT3D_render_3k"
 
 count = 0
 countg600 = 0
