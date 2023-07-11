@@ -34,7 +34,7 @@ for folder in os.listdir(folder_path):
 
 print("===============================================\n\n")
 print("images greater than 80 and less than 450", count)
-# print("all file count", all_file_count)
+print("all file count", all_file_count)
 print("images greater than 450", countg600)
 print("images less than 80", countl80)
 print("===============================================\n\n")
