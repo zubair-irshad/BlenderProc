@@ -2,7 +2,7 @@ import os
 import json
 import numpy as np
 
-folder_path = "/home/zubairirshad/Downloads/FRONT3D_render"
+folder_path = "/arkit_data/zubair/FRONT3D_render_3k"
 
 for folder in os.listdir(folder_path):
     folder_full_path = os.path.join(folder_path, folder)
