@@ -19,13 +19,13 @@ import sys
 
 # sys.path.append('/home/jhuangce/miniconda3/lib/python3.9/site-packages')
 # sys.path.append('/home/yliugu/BlenderProc/scripts')
-sys.path.append("./scripts")
+sys.path.append("./scripts_rpn_original")
 import cv2
 import os
 from os.path import join
 import numpy as np
 
-import imageio
+# import imageio
 import sys
 
 # sys.path.append('/data/jhuangce/BlenderProc/scripts')
@@ -42,7 +42,7 @@ import glob
 import argparse
 from mathutils import Vector, Matrix
 
-import pandas as pd
+# import pandas as pd
 from seg import build_segmentation_map, build_metadata
 
 
