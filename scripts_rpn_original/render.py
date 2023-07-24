@@ -750,7 +750,7 @@ def parse_args():
     parser.add_argument(
         "--render_root",
         type=str,
-        default="/wild6d_data/zubair/nerf_rpn/FRONT3D_render_seg",
+        default="/wild6d_data/zubair/nerf_rpn/FRONT3D_render_seg_2",
         help="Output directory. If not specified, use the default directory.",
     )
 
@@ -971,6 +971,8 @@ def main():
             map_by=["instance", "cp_instance_id"], default_values={"cp_instance_id": 0}
         )
 
+        temp_dir = RENDER_TEMP_DIR
+
         seg_dir = os.path.join(args.render_root, "seg", scene_name)
         os.makedirs(seg_dir, exist_ok=True)
         bproc.writer.write_hdf5(seg_dir, data)
@@ -996,8 +998,13 @@ def main():
         data = bproc.renderer.render()
 
         depth_dir = os.path.join(args.render_root, "depth", scene_name)
+        imgs_dir = os.path.join(args.render_root, "rgb", scene_name)
         os.makedirs(depth_dir, exist_ok=True)
         bproc.writer.write_hdf5(depth_dir, {"depth": data["depth"]})
+
+        imgs = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in data["colors"]]
+        for i, img in enumerate(imgs):
+            cv2.imwrite(join(imgs_dir, "{:04d}.jpg".format(i)), img)
 
 
 if __name__ == "__main__":
