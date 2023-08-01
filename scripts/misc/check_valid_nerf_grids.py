@@ -24,10 +24,10 @@ for scene_name in scenes:
     feature = np.load(os.path.join(feature_dir, scene_name + ".npz"), allow_pickle=True)
 
     res = feature["resolution"]
-    rgbsigma = feature["rgbsigma"]
+    # rgbsigma = feature["rgbsigma"]
 
     print("res", res)
-    print("rgbsigma original", rgbsigma.shape)
+    # print("rgbsigma original", rgbsigma.shape)
 
     if sum(dim < 50 for dim in res) == 2:
         #     print(arr)
