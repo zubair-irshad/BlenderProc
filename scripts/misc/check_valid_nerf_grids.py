@@ -3,7 +3,7 @@ import numpy as np
 
 
 min_dim = 50
-feature_dir = '/wild6d_data/zubair/FRONT3D_MAE'
+feature_dir = "/arkit_data/zubair/front3d_rpn_data_3k"
 npz_files = os.listdir(feature_dir)
 npz_files = [
     f
@@ -24,10 +24,9 @@ for scene_name in scenes:
     # print("res", res)
     # print("rgbsigma original", rgbsigma.shape)
 
-
     if sum(dim < 50 for dim in res) == 2:
-    #     print(arr)
-    # if res[0] <min_dim or res[1] <min_dim or res[2] <min_dim:
+        #     print(arr)
+        # if res[0] <min_dim or res[1] <min_dim or res[2] <min_dim:
         print("scene_name", scene_name)
         print("res", res)
         filtered_scenes_count += 1

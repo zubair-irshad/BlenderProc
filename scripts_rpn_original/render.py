@@ -971,7 +971,7 @@ def main():
             map_by=["instance", "cp_instance_id"], default_values={"cp_instance_id": 0}
         )
 
-        temp_dir = RENDER_TEMP_DIR
+        # temp_dir = RENDER_TEMP_DIR
 
         seg_dir = os.path.join(args.render_root, "seg", scene_name)
         os.makedirs(seg_dir, exist_ok=True)
@@ -1001,6 +1001,31 @@ def main():
         imgs_dir = os.path.join(args.render_root, "rgb", scene_name)
         os.makedirs(depth_dir, exist_ok=True)
         bproc.writer.write_hdf5(depth_dir, {"depth": data["depth"]})
+
+        imgs = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in data["colors"]]
+        for i, img in enumerate(imgs):
+            cv2.imwrite(join(imgs_dir, "{:04d}.jpg".format(i)), img)
+
+    elif args.mode == "color_ngp":
+        # Render depth images
+        scene_name = f"3dfront_{args.scene_idx:04d}_{args.room_idx:02d}"
+        poses_file = os.path.join(args.pose_dir, scene_name, "train", "transforms.json")
+        with open(poses_file) as f:
+            data = json.load(f)
+            for frame in data["frames"]:
+                pose = np.array(frame["transform_matrix"])
+                bproc.camera.add_camera_pose(pose)
+
+        bproc.renderer.set_light_bounces(
+            diffuse_bounces=200,
+            glossy_bounces=200,
+            max_bounces=200,
+            transmission_bounces=200,
+            transparent_max_bounces=200,
+        )
+        bproc.camera.set_intrinsics_from_K_matrix(K, IMG_WIDTH, IMG_HEIGHT)
+        temp_dir = RENDER_TEMP_DIR
+        data = bproc.renderer.render(output_dir=temp_dir)
 
         imgs = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in data["colors"]]
         for i, img in enumerate(imgs):
