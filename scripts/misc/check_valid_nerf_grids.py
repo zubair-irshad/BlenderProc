@@ -16,18 +16,18 @@ scenes = [f.split(".")[0] for f in npz_files]
 filtered_scenes = []
 filtered_scenes_count = 0
 for scene_name in scenes:
-    print("scene_name", scene_name)
-    print(
-        "os.path.join(feature_dir, scene_name + .npz)",
-        os.path.join(feature_dir, scene_name + ".npz"),
-    )
+    # print("scene_name", scene_name)
+    # print(
+    #     "os.path.join(feature_dir, scene_name + .npz)",
+    #     os.path.join(feature_dir, scene_name + ".npz"),
+    # )
     feature = np.load(os.path.join(feature_dir, scene_name + ".npz"), allow_pickle=True)
 
     res = feature["resolution"]
-    # rgbsigma = feature["rgbsigma"]
+    rgbsigma = feature["rgbsigma"]
 
-    # print("res", res)
-    # print("rgbsigma original", rgbsigma.shape)
+    print("res", res)
+    print("rgbsigma original", rgbsigma.shape)
 
     if sum(dim < 50 for dim in res) == 2:
         #     print(arr)
