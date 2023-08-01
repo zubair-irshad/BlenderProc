@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 # Load the split file
-split_file = "/wild6d_data/zubair/nerf_rpn/front3d_rpn_data/3dfront_split.npz"
+split_file = "/wild6d_data/zubair/nerf_rpn/front3d_rpn_data/front3d_split.npz"
 
 split = np.load(split_file)
 # Get the list of scenes from the features directory
