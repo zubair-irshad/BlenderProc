@@ -16,6 +16,11 @@ scenes = [f.split(".")[0] for f in npz_files]
 filtered_scenes = []
 filtered_scenes_count = 0
 for scene_name in scenes:
+    print("scene_name", scene_name)
+    print(
+        "os.path.join(feature_dir, scene_name + .npz)",
+        os.path.join(feature_dir, scene_name + ".npz"),
+    )
     feature = np.load(os.path.join(feature_dir, scene_name + ".npz"), allow_pickle=True)
 
     res = feature["resolution"]
