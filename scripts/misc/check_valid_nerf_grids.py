@@ -3,7 +3,7 @@ import numpy as np
 
 
 min_dim = 50
-feature_dir = "/arkit_data/zubair/front3d_rpn_data_3k"
+feature_dir = "/arkit_data/arkitscenes_rpn_data"
 npz_files = os.listdir(feature_dir)
 npz_files = [
     f
