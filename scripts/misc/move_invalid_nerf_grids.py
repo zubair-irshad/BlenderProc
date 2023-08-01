@@ -1,7 +1,7 @@
 import os
 
 # Source folder
-source_folder = "/wild6d_data/zubair/FRONT3D_MAE"
+source_folder = "/arkit_data/zubair/front3d_rpn_data_3k"
 
 # Destination folder
 destination_folder = "/wild6d_data/zubair/MAE_invalid_grids"
