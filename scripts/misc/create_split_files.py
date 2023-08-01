@@ -8,7 +8,7 @@ split = np.load(split_file)
 # Get the list of scenes from the features directory
 features_dir = "/wild6d_data/zubair/MAE_complete_data/features"
 
-out_file = "/wild6d_data/zubair/MAE_complete_data/3dfront_split.npz"
+out_file = "/wild6d_data/zubair/MAE_complete_data/front3d_split.npz"
 scenes = []
 for file_name in os.listdir(features_dir):
     if file_name.endswith(".npz"):
