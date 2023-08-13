@@ -6,7 +6,7 @@ dataset_name = "scannet"
 
 # path = '/wild6d_data/zubair/nerf_rpn/scannet_rpn_data'
 split_file = (
-    "/wild6d_data/zubair/nerf_rpn/${dataset_name}_rpn_data/${dataset_name}_split.npz"
+    "/wild6d_data/zubair/nerf_rpn/{dataset_name}_rpn_data/{dataset_name}_split.npz"
 )
 
 print("split_file", split_file)
