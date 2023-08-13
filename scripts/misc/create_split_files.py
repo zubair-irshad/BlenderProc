@@ -9,6 +9,8 @@ split_file = (
     "/wild6d_data/zubair/nerf_rpn/${dataset_name}_rpn_data/${dataset_name}_split.npz"
 )
 
+print("split_file", split_file)
+
 # split_file = "/wild6d_data/zubair/nerf_rpn/front3d_rpn_data/front3d_split.npz"
 
 split = np.load(split_file)
