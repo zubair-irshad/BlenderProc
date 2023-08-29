@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 # Load the split file
-dataset_name = "scannet"
+dataset_name = "front3d"
 
 # split_file = (
 #     f"/wild6d_data/zubair/nerf_rpn/{dataset_name}_rpn_data/{dataset_name}_split.npz"
@@ -18,7 +18,7 @@ print("split_file", split_file)
 split = np.load(split_file)
 # Get the list of scenes from the features directory
 
-out_dir = "/wild6d_data/zubair/arkitscenes_rpn_data"
+out_dir = "/wild6d_data/zubair/MAE_complete_data"
 features_dir = os.path.join(out_dir, "features")
 # features_dir = "/wild6d_data/zubair/nerf_rpn/scannet_rpn_data_all/features"
 
