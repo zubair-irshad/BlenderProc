@@ -3,7 +3,7 @@ import numpy as np
 
 
 min_dim = 50
-feature_dir = "/arkit_data/arkitscenes_rpn_data"
+feature_dir = "/arkit_data/hm3d_rpn_data"
 npz_files = os.listdir(feature_dir)
 npz_files = [
     f
@@ -40,5 +40,5 @@ for scene_name in scenes:
 print("Invalid number of grids", filtered_scenes_count)
 
 # Save the filtered scene names to a text file
-with open("filtered_scenes.txt", "w") as file:
-    file.write("\n".join(filtered_scenes))
+# with open("filtered_scenes.txt", "w") as file:
+#     file.write("\n".join(filtered_scenes))
