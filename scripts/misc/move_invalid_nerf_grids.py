@@ -7,7 +7,9 @@ source_folder = "/wild6d_data/zubair/MAE_complete_data/features"
 destination_folder = "/arkit_data/zubair/MAE_invalid_grids"
 
 # Read the filtered scenes from the file
-with open("/home/ubuntu/zubair/BlenderProc/filtered_scenes_hm3d.txt", "r") as file:
+with open(
+    "/home/ubuntu/zubair/BlenderProc/scripts/misc/filtered_scenes_hm3d.txt", "r"
+) as file:
     scenes = file.read().splitlines()
 
 # Move the scenes to the destination folder
