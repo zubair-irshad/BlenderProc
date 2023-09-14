@@ -45,7 +45,7 @@ for scene_name in scenes:
 
     density = rgbsigma[..., -1]
 
-    print("density min max", density.min(), density.max())
+    # print("density min max", density.min(), density.max())
 
     alpha = density_to_alpha(density, scene_name)
 
