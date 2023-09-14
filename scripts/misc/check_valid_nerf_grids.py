@@ -13,6 +13,11 @@ npz_files = [
 
 scenes = [f.split(".")[0] for f in npz_files]
 
+
+def density_to_alpha(density):
+    return np.clip(1.0 - np.exp(-np.exp(density) / 100.0), 0.0, 1.0)
+
+
 filtered_scenes = []
 filtered_scenes_count = 0
 for scene_name in scenes:
@@ -24,21 +29,28 @@ for scene_name in scenes:
     feature = np.load(os.path.join(feature_dir, scene_name + ".npz"), allow_pickle=True)
 
     res = feature["resolution"]
-    # rgbsigma = feature["rgbsigma"]
+    rgbsigma = feature["rgbsigma"]
+
+    density = rgbsigma[..., -1]
+
+    print("density min max", density.min(), density.max())
+
+    alpha = density_to_alpha(density)
+
+    print("alpha min max", alpha.min(), alpha.max())
 
     print("res", res)
     # print("rgbsigma original", rgbsigma.shape)
 
-    if sum(dim < 50 for dim in res) == 2 or any(dim < 20 for dim in res):
-        #     print(arr)
-        # if res[0] <min_dim or res[1] <min_dim or res[2] <min_dim:
-        print("scene_name", scene_name)
-        print("res", res)
-        filtered_scenes_count += 1
-        filtered_scenes.append(scene_name)
+    # if sum(dim < 50 for dim in res) == 2 or any(dim < 20 for dim in res):
+    #     print("scene_name", scene_name)
+    #     print("res", res)
+    #     filtered_scenes_count += 1
+    #     filtered_scenes.append(scene_name)
 
+    print("==========================================\n\n\n")
 print("Invalid number of grids", filtered_scenes_count)
 
-# Save the filtered scene names to a text file
-with open("filtered_scenes_hm3d.txt", "w") as file:
-    file.write("\n".join(filtered_scenes))
+# # Save the filtered scene names to a text file
+# with open("filtered_scenes_hm3d.txt", "w") as file:
+#     file.write("\n".join(filtered_scenes))
