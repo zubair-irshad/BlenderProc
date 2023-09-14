@@ -40,5 +40,5 @@ for scene_name in scenes:
 print("Invalid number of grids", filtered_scenes_count)
 
 # Save the filtered scene names to a text file
-# with open("filtered_scenes.txt", "w") as file:
-#     file.write("\n".join(filtered_scenes))
+with open("filtered_scenes_hm3d.txt", "w") as file:
+    file.write("\n".join(filtered_scenes))
