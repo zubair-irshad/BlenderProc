@@ -32,7 +32,8 @@ filtered_scenes_count = 0
 count = 0
 for scene_name in scenes:
     count += 1
-    print("count", count)
+    if count % 100 == 0:
+        print("count", count)
     # print("scene_name", scene_name)
     # print(
     #     "os.path.join(feature_dir, scene_name + .npz)",
