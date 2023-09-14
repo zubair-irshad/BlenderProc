@@ -29,7 +29,7 @@ for scene_name in scenes:
     print("res", res)
     # print("rgbsigma original", rgbsigma.shape)
 
-    if sum(dim < 50 for dim in res) == 2:
+    if sum(dim < 50 for dim in res) == 2 or any(dim < 20 for dim in res):
         #     print(arr)
         # if res[0] <min_dim or res[1] <min_dim or res[2] <min_dim:
         print("scene_name", scene_name)
