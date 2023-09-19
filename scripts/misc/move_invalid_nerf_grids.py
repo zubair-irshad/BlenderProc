@@ -4,7 +4,7 @@ import os
 source_folder = "/arkit_data/hm3d_rpn_data"
 
 # Destination folder
-destination_folder = "/wild6d_data/zubair/MAE_invalid_grids"
+destination_folder = "/arkit_data/zubair/MAE_invalid_grids"
 
 # Read the filtered scenes from the file
 with open(
