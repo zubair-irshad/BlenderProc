@@ -18,7 +18,7 @@ print("split_file", split_file)
 split = np.load(split_file)
 # Get the list of scenes from the features directory
 
-out_dir = "/wild6d_data/zubair/nerf_rpn/hm3d_rpn_data_ft"
+out_dir = "/arkit_data/hm3d_rpn_data_ft"
 features_dir = os.path.join(out_dir, "features")
 # features_dir = "/wild6d_data/zubair/nerf_rpn/scannet_rpn_data_all/features"
 
