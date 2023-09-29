@@ -3,7 +3,7 @@ import numpy as np
 
 # Load the split file
 dataset_name = "front3d"
-
+out_name = "hm3d"
 # split_file = (
 #     f"/wild6d_data/zubair/nerf_rpn/{dataset_name}_rpn_data/{dataset_name}_split.npz"
 # )
@@ -22,7 +22,7 @@ out_dir = "/wild6d_data/zubair/nerf_rpn/hm3d_rpn_data_ft"
 features_dir = os.path.join(out_dir, "features")
 # features_dir = "/wild6d_data/zubair/nerf_rpn/scannet_rpn_data_all/features"
 
-out_file = os.path.join(out_dir, dataset_name + "_split.npz")
+out_file = os.path.join(out_dir, out_name + "_split.npz")
 # out_file = "/wild6d_data/zubair/MAE_complete_data/front3d_split.npz"
 scenes = []
 for file_name in os.listdir(features_dir):
