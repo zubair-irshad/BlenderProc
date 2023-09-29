@@ -3,7 +3,7 @@ import numpy as np
 import warnings
 
 min_dim = 50
-feature_dir = "/arkit_data/hm3d_rpn_data_ft"
+feature_dir = "/arkit_data/hm3d_rpn_data_ft/features"
 npz_files = os.listdir(feature_dir)
 npz_files = [
     f
