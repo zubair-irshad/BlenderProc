@@ -3,7 +3,7 @@ import numpy as np
 
 # Load the split file
 dataset_name = "front3d"
-out_name = "hm3d"
+out_name = "front3d"
 # split_file = (
 #     f"/wild6d_data/zubair/nerf_rpn/{dataset_name}_rpn_data/{dataset_name}_split.npz"
 # )
@@ -18,7 +18,7 @@ print("split_file", split_file)
 split = np.load(split_file)
 # Get the list of scenes from the features directory
 
-out_dir = "/wild6d_data/zubair/nerf_rpn/hm3d_rpn_data"
+out_dir = "/arkit_data/zubair/front3d_rpn_data_sparse1"
 features_dir = os.path.join(out_dir, "features")
 # features_dir = "/wild6d_data/zubair/nerf_rpn/scannet_rpn_data_all/features"
 
@@ -44,7 +44,8 @@ val_indices = all_indices[:20]
 test_indices = all_indices[20:38]
 
 # The remaining indices are for training
-train_indices = all_indices[38:]
+# train_indices = all_indices[38:]
+train_indices = all_indices
 
 print("len train val test", len(train_indices), len(val_indices), len(test_indices))
 
